@@ -1,5 +1,8 @@
 <template>
-  <h1 class="text-3xl font-bold text-red-500 underline">
-    Hello world!
-  </h1>
+  <div class="mx-auto max-w-7xl px-6 py-8">
+    <Block></Block>
+
+    <AddBlockPlaceholder />
+
+  </div>
 </template>
