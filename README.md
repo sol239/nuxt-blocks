@@ -60,6 +60,151 @@ When optional capabilities are disabled (`false` by default):
 
 ---
 
+## How to Use
+
+`nuxt-blocks` offers two primary integration patterns depending on your use case:
+
+### 1) Using `BlockCanvas` (Full Document Editor)
+
+`BlockCanvas` is the all-in-one document editor. It renders the full array of blocks, manages focus, block addition, deletion, turn-into transformation menus, and keyboard shortcuts. Pair it with `TextToolbar` for rich-text inline formatting (bold, italic, colors, math, fonts).
+
+```vue
+<template>
+  <div class="max-w-4xl mx-auto py-8">
+    <BlockCanvas
+      :blocks="blocks"
+      @add="onAddBlock"
+      @add-after="onAddBlock('paragraph', $event)"
+      @delete="onDeleteBlock"
+      @update:block="onUpdateBlock"
+      @focused-block="focusedBlock = $event"
+    />
+
+    <!-- Formatting toolbar floats when a text block is active -->
+    <TextToolbar
+      :visible="Boolean(focusedBlock)"
+      :block="focusedBlock"
+      @update:block="onUpdateBlock"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import {
+  ParagraphBlock,
+  Heading1Block,
+  Heading2Block,
+  type Block,
+  type BlockType,
+} from "nuxt-blocks";
+
+const blocks = ref<Block[]>([
+  new Heading1Block("b1", 1, "Welcome to My Page"),
+  new ParagraphBlock("b2", 1, "Start typing your notes here with full markdown and rich-text spans support..."),
+]);
+
+const focusedBlock = ref<Block | null>(null);
+
+function onUpdateBlock(updated: Block) {
+  const index = blocks.value.findIndex((b) => b.id === updated.id);
+  if (index !== -1) {
+    blocks.value[index] = updated;
+  }
+}
+
+function onDeleteBlock(id: string) {
+  blocks.value = blocks.value.filter((b) => b.id !== id);
+}
+
+function onAddBlock(type: BlockType, afterIndex?: number) {
+  // Add new block logic or use createBlock(type, ...)
+}
+</script>
+```
+
+---
+
+### 2) Using Distinct Block Components (Standalone Block Units)
+
+Every block component can also be used directly on its own, allowing you to embed individual block types inside custom cards, modals, sidebars, or custom layout builders without mounting the full canvas.
+
+You can render them standalone or wrap them inside `<BlockWrapper>` to include the hover actions button, alignment controls, and deletion menu.
+
+#### Available Distinct Block Components
+
+| Component | Class | Stored Data |
+|---|---|---|
+| `<ParagraphBlock>` | `ParagraphBlock` | Plain text with rich style/color spans |
+| `<Heading1Block>` | `Heading1Block` | Heading 1 text |
+| `<Heading2Block>` | `Heading2Block` | Heading 2 text |
+| `<Heading3Block>` | `Heading3Block` | Heading 3 text |
+| `<CodeBlock>` | `CodeBlock` | Code string (requires `code: true`) |
+| `<MathBlock>` | `MathBlock` | LaTeX formula string (requires `math: true`) |
+| `<DrawingBlock>` | `DrawingBlock` | Pixi stroke data (requires `drawing: true`) |
+| `<BulletedListBlock>` | `BulletedListBlock` | Markdown `- ` lines |
+| `<NumberedListBlock>` | `NumberedListBlock` | Markdown `1. ` lines |
+| `<QuoteBlock>` | `QuoteBlock` | Markdown `> ` lines |
+| `<DividerBlock>` | `DividerBlock` | Fixed `---` horizontal rule |
+| `<LinkBlock>` | `LinkBlock` | Clickable link URL |
+| `<ImageBlock>` | `ImageBlock` | Image URL / base64 |
+| `<VideoBlock>` | `VideoBlock` | Video URL / base64 |
+| `<AudioBlock>` | `AudioBlock` | Audio URL / base64 |
+
+#### Example: Standalone Embedding with & without `BlockWrapper`
+
+```vue
+<template>
+  <div class="space-y-6 max-w-2xl mx-auto p-4">
+    <!-- 1. Standalone Heading Block -->
+    <Heading1Block
+      :block="heading"
+      @update:block="heading = $event"
+    />
+
+    <!-- 2. Standalone Paragraph wrapped in BlockWrapper for actions & alignment -->
+    <BlockWrapper
+      :block="paragraph"
+      @update:block="paragraph = $event"
+    >
+      <ParagraphBlock
+        :block="paragraph"
+        @update:block="paragraph = $event"
+      />
+    </BlockWrapper>
+
+    <!-- 3. Standalone Code Editor block -->
+    <CodeBlock
+      :block="code"
+      @update:block="code = $event"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import {
+  Heading1Block,
+  ParagraphBlock,
+  CodeBlock,
+  CodeBlockSettings,
+} from "nuxt-blocks";
+
+const heading = ref(new Heading1Block("title", 1, "Section Title"));
+const paragraph = ref(new ParagraphBlock("para", 1, "Editable single paragraph component."));
+const code = ref(
+  new CodeBlock(
+    "code",
+    1,
+    'console.log("Embedded code block");',
+    new CodeBlockSettings({ language: "typescript" }),
+  ),
+);
+</script>
+```
+
+---
+
 ## Architecture & Concepts
 
 Every block receives a `Block` instance through `v-model:block` and renders inside `BlockWrapper`.
