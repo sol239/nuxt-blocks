@@ -1,3 +1,5 @@
+import type { StyleSpan, ColorSpan } from "./textSpans";
+
 export type BlockAllignment = "left" | "center" | "right";
 
 export interface IBlockSettings {
@@ -6,4 +8,6 @@ export interface IBlockSettings {
   fontSize?: number;
   width?: number;
   height?: number;
+  styles?: StyleSpan[];
+  colors?: ColorSpan[];
 }

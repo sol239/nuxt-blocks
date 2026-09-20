@@ -23,6 +23,21 @@
           @update:block="onUpdateBlock(index, $event)"
         />
       </BlockWrapper>
+
+      <!-- Empty state: Add Block placeholder button with the width of the blocks -->
+      <div v-if="blocks.length === 0" class="w-full pt-8">
+        <button
+          type="button"
+          aria-label="Add Block"
+          class="add-block-placeholder group flex w-full flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50/60 p-10 text-gray-500 transition-all hover:border-blue-400 hover:bg-blue-50/30 hover:text-blue-600 focus:border-blue-500 focus:bg-blue-50/40 focus:text-blue-600 focus:outline-none"
+          @click="onAddPlaceholder"
+        >
+          <div class="flex size-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-xs transition-colors group-hover:border-blue-300 group-hover:text-blue-600">
+            <Icon name="material-symbols:add" class="size-6" />
+          </div>
+          <span class="text-sm font-medium">Add Block</span>
+        </button>
+      </div>
     </div>
 
     <!-- Desktop-style custom drag selection rectangle -->
@@ -49,6 +64,7 @@ const emit = defineEmits<{
   "delete": [id: string];
   "add": [type: BlockType];
   "focused-block-type": [type: BlockType | null];
+  "focused-block": [block: Block | null];
   "update:selectedBlockIds": [ids: string[]];
 }>();
 
@@ -95,10 +111,18 @@ const textEditableTypes = new Set<BlockType>([
 
 let blurTimeout: ReturnType<typeof setTimeout> | null = null;
 
+function onAddPlaceholder() {
+  emit("add", "paragraph");
+  emit("add-after", 0);
+}
+
 function onUpdateBlock(index: number, updated: Block) {
   props.blocks[index] = updated;
   emit("update:block", index, updated);
   emit("update:blocks", props.blocks);
+  if (lastFocusedBlockId.value === updated.id) {
+    emit("focused-block", updated);
+  }
 }
 
 function onFocusIn(block: Block) {
@@ -109,23 +133,33 @@ function onFocusIn(block: Block) {
   }
   const type = block.blockType ?? "paragraph";
   emit("focused-block-type", textEditableTypes.has(type) ? type : null);
+  emit("focused-block", block);
 }
 
-function onFocusOut() {
+function onFocusOut(event: FocusEvent) {
+  const related = event.relatedTarget as HTMLElement | null;
+  if (related?.closest?.('[role="toolbar"]')) {
+    return;
+  }
   if (blurTimeout) clearTimeout(blurTimeout);
   blurTimeout = setTimeout(() => {
     const activeEl = document.activeElement;
+    if (activeEl?.closest('[role="toolbar"]')) {
+      return;
+    }
     const wrapper = activeEl?.closest<HTMLElement>("[data-block-id]");
     if (wrapper && canvasRef.value?.contains(wrapper)) {
       const blockId = wrapper.getAttribute("data-block-id");
       const currentBlock = props.blocks.find(b => b.id === blockId);
       if (currentBlock?.blockType && textEditableTypes.has(currentBlock.blockType)) {
         emit("focused-block-type", currentBlock.blockType);
+        emit("focused-block", currentBlock);
         return;
       }
     }
     emit("focused-block-type", null);
-  }, 100);
+    emit("focused-block", null);
+  }, 250);
 }
 
 // Check which block wrappers intersect the drag selection rectangle
@@ -163,9 +197,13 @@ function onMouseDown(event: MouseEvent) {
 
   const target = event.target as HTMLElement;
   // If clicking on inputs, textareas, buttons, or editor surfaces, don't drag-select
-  if (target.closest("textarea, input, select, button, a, .monaco-editor, [role='menu']")) {
+  if (target.closest("textarea, input, select, button, a, .monaco-editor, [role='menu'], [role='toolbar'], .drawing-canvas-container, canvas")) {
     return;
   }
+
+  // Clear focused block when clicking on empty canvas background
+  emit("focused-block-type", null);
+  emit("focused-block", null);
 
   isMouseDown = true;
   hasMoved = false;

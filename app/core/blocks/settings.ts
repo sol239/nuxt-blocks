@@ -12,6 +12,7 @@ import { VideoBlockSettings } from "./VideoBlockSettings";
 import { AudioBlockSettings } from "./AudioBlockSettings";
 import { CodeBlockSettings } from "./CodeBlockSettings";
 import { MathBlockSettings } from "./MathBlockSettings";
+import { DrawingBlockSettings } from "./DrawingBlockSettings";
 export const settingsClasses = {
   paragraph: ParagraphBlockSettings,
   heading1: Heading1BlockSettings,
@@ -27,6 +28,7 @@ export const settingsClasses = {
   audio: AudioBlockSettings,
   code: CodeBlockSettings,
   math: MathBlockSettings,
+  drawing: DrawingBlockSettings,
 };
 export function createBlockSettings(type: keyof typeof settingsClasses, value?: object | null) {
   return Object.assign(new settingsClasses[type](), value ?? {});

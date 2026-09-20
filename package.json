@@ -1,27 +1,59 @@
 {
-  "name": "blocks",
+  "name": "nuxt-blocks",
+  "version": "0.1.0",
+  "description": "Extensible, rich-text, media, math, and code block editor module for Nuxt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sol239/blocks.git"
+  },
+  "homepage": "https://github.com/sol239/blocks#readme",
+  "bugs": {
+    "url": "https://github.com/sol239/blocks/issues"
+  },
   "type": "module",
-  "private": true,
+  "main": "./dist/module.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "nuxt-blocks": "./bin/cli.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/module.js"
+    },
+    "./core": {
+      "types": "./dist/app/core/blocks/Block.d.ts",
+      "import": "./dist/app/core/blocks/Block.js"
+    }
+  },
+  "files": [
+    "dist",
+    "app",
+    "bin",
+    "README.md"
+  ],
   "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:app": "nuxt build",
+    "prepack": "npm run build",
+    "dev": "nuxt dev",
+    "dev:playground": "nuxt dev playground",
     "test": "playwright test",
     "typecheck": "nuxt typecheck",
-    "build": "nuxt build",
-    "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@clack/prompts": "^1.2.0",
     "@iconify-json/heroicons": "^1.2.3",
     "@iconify-json/material-symbols": "^1.2.92",
-    "@monaco-editor/loader": "^1.7.0",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/icon": "^2.5.1",
+    "@nuxt/kit": "^3.16.0",
     "@pinia/nuxt": "^1.0.2",
     "@tailwindcss/vite": "^4.3.3",
     "eslint": "^10.10.0",
-    "katex": "^0.18.7",
-    "monaco-editor": "^0.56.0",
     "nuxt": "^4.5.2",
     "pinia": "^4.0.3",
     "tailwindcss": "^4.3.3",
@@ -29,7 +61,34 @@
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
+    "@monaco-editor/loader": "^1.7.0",
     "@playwright/test": "^1.63.0",
+    "katex": "^0.18.7",
+    "monaco-editor": "^0.56.0",
+    "pixi.js": "^8.21.0",
     "vue-tsc": "^3.3.11"
+  },
+  "peerDependencies": {
+    "nuxt": "^3.0.0 || ^4.0.0",
+    "pinia": ">=2.0.0 || >=3.0.0 || >=4.0.0",
+    "vue": "^3.4.0",
+    "@monaco-editor/loader": "^1.7.0",
+    "katex": "^0.18.7",
+    "monaco-editor": "^0.56.0",
+    "pixi.js": "^8.21.0"
+  },
+  "peerDependenciesMeta": {
+    "@monaco-editor/loader": {
+      "optional": true
+    },
+    "katex": {
+      "optional": true
+    },
+    "monaco-editor": {
+      "optional": true
+    },
+    "pixi.js": {
+      "optional": true
+    }
   }
 }

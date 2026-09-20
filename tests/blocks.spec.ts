@@ -18,6 +18,7 @@ import {
   AudioBlock,
   CodeBlock,
   MathBlock,
+  DrawingBlock,
 } from "../app/core/blocks/blockClasses";
 import { CodeBlockSettings } from "../app/core/blocks/CodeBlockSettings";
 import { ImageBlockSettings } from "../app/core/blocks/ImageBlockSettings";
@@ -62,7 +63,7 @@ test("settings survive edits and JSON restoration for every block type", () => {
   expect(restoredVid.blockSettings).toMatchObject({ width: 640, height: 360 });
 });
 
-test("all 14 block subclasses implement toMarkdown and fromMarkdown correctly", () => {
+test("all 15 block subclasses implement toMarkdown and fromMarkdown correctly", () => {
   // 1. Paragraph
   const p = new ParagraphBlock("p1", 1, "Hello world");
   expect(p.toMarkdown()).toBe("Hello world");
@@ -157,6 +158,15 @@ test("all 14 block subclasses implement toMarkdown and fromMarkdown correctly", 
   expect(math.toMarkdown()).toBe("$$\nE = mc^2\n$$");
   const mathParsed = new MathBlock().fromMarkdown("$$\na^2 + b^2 = c^2\n$$");
   expect(mathParsed.data).toBe("a^2 + b^2 = c^2");
+
+  // 15. Drawing
+  const drawingJson = JSON.stringify({
+    strokes: [{ tool: "pen", points: [{ x: 10, y: 10 }, { x: 20, y: 20 }], width: 3, color: "#000000" }],
+  });
+  const drawBlock = new DrawingBlock("d1", 1, drawingJson);
+  expect(drawBlock.toMarkdown()).toBe(`\`\`\`drawing\n${drawingJson}\n\`\`\``);
+  const drawRestored = new DrawingBlock().fromMarkdown(`\`\`\`drawing\n${drawingJson}\n\`\`\``);
+  expect(drawRestored.data).toBe(drawingJson);
 });
 
 test("marker formats and safe media sources", () => {
@@ -206,6 +216,7 @@ const blockLabels: Record<BlockType, string> = {
   audio: "Audio",
   code: "Code",
   math: "Math",
+  drawing: "Drawing",
 };
 
 async function add(page: Page, type: BlockType) {
@@ -269,9 +280,10 @@ test("all block editors render inside wrappers and update interactively", async 
   await firstBlock.locator('button[aria-label="Block actions"]').click();
   await firstBlock.getByRole("menuitem", { name: "Turn into" }).click();
   const turnIntoMenu = firstBlock.getByRole("menu", { name: "Turn into options" });
-  await expect(turnIntoMenu.getByRole("menuitem")).toHaveCount(14);
+  await expect(turnIntoMenu.getByRole("menuitem")).toHaveCount(15);
   await expect(turnIntoMenu.getByRole("menuitem", { name: "Code" })).toHaveCount(1);
   await expect(turnIntoMenu.getByRole("menuitem", { name: "Math" })).toHaveCount(1);
+  await expect(turnIntoMenu.getByRole("menuitem", { name: "Drawing" })).toHaveCount(1);
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
 
@@ -340,6 +352,26 @@ test("all block editors render inside wrappers and update interactively", async 
   await expect(math.locator(".katex")).toBeVisible();
   await math.getByLabel("LaTeX source").fill("{");
   await expect(math.locator(".katex-error")).toBeVisible();
+
+  const drawing = await add(page, "drawing");
+  const canvasContainer = drawing.locator(".drawing-canvas-container");
+  await expect(canvasContainer).toBeVisible();
+  const canvas = canvasContainer.locator("canvas");
+  await expect(canvas).toBeAttached();
+
+  const box = await canvasContainer.boundingBox();
+  if (box) {
+    await page.mouse.move(box.x + 50, box.y + 50);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 100, box.y + 100);
+    await page.mouse.move(box.x + 150, box.y + 120);
+    await page.mouse.up();
+  }
+  await expect(drawing.getByText("1 stroke")).toBeVisible();
+  await drawing.hover();
+  await drawing.getByRole("button", { name: /clear/i }).click();
+  await expect(drawing.getByText("0 strokes")).toBeVisible();
+
   expect(errors).toEqual([]);
 });
 
@@ -369,4 +401,29 @@ test("image and video resize handles and dimension settings", async ({ page }) =
   await imageBlock.getByText("Reset to auto").click();
   await imageBlock.locator('[aria-label="Done editing"]').click();
   await expect(mediaContainer).not.toHaveAttribute("style", /width:/);
+});
+
+test("AppConfiguration defaults code, math, and drawing to false", () => {
+  const config = new AppConfiguration();
+  expect(config.codeBlocksAllowed).toBe(false);
+  expect(config.mathAllowed).toBe(false);
+  expect(config.drawingBlocksAllowed).toBe(false);
+
+  const custom = new AppConfiguration({
+    codeBlocksAllowed: true,
+    mathAllowed: true,
+    drawingBlocksAllowed: true,
+  });
+  expect(custom.codeBlocksAllowed).toBe(true);
+  expect(custom.mathAllowed).toBe(true);
+  expect(custom.drawingBlocksAllowed).toBe(true);
+});
+
+test("dist exports public contracts and default module", async () => {
+  const dist = await import("../dist/index.js");
+  expect(dist.Block).toBeDefined();
+  expect(dist.ParagraphBlock).toBeDefined();
+  expect(dist.Heading1Block).toBeDefined();
+  expect(dist.AppConfiguration).toBeDefined();
+  expect(dist.default).toBeDefined();
 });

@@ -12,6 +12,7 @@ import VideoComponent from "~/components/VideoBlock.vue";
 import AudioComponent from "~/components/AudioBlock.vue";
 import CodeComponent from "~/components/CodeBlock.vue";
 import MathComponent from "~/components/MathBlock.vue";
+import DrawingComponent from "~/components/DrawingBlock.vue";
 import type { Component } from "vue";
 import type { BlockType } from "./Block";
 
@@ -32,6 +33,7 @@ export const blockComponents: Record<BlockType, Component> = {
   audio: AudioComponent,
   code: CodeComponent,
   math: MathComponent,
+  drawing: DrawingComponent,
 };
 
 export const blockLabels: Record<BlockType, string> = {
@@ -49,4 +51,5 @@ export const blockLabels: Record<BlockType, string> = {
   audio: "Audio",
   code: "Code",
   math: "Math",
+  drawing: "Drawing",
 };

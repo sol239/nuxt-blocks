@@ -36,9 +36,9 @@ import loader from "@monaco-editor/loader";
 import type * as Monaco from "monaco-editor";
 import type { Block } from "~/core/blocks/Block";
 import { CodeBlockSettings } from "~/core/blocks/CodeBlockSettings";
-import { AppConfiguration } from "~/core/AppConfiguration";
+import { useBlocksConfig } from "~/composables/useBlocksConfig";
 
-const config = new AppConfiguration();
+const config = useBlocksConfig();
 
 let monacoPromise: Promise<typeof Monaco> | undefined;
 

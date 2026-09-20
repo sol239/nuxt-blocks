@@ -1,4 +1,66 @@
-# Blocks
+# nuxt-blocks
+
+An extensible, modular rich-text, media, math, and code block editor for Nuxt 3 and Nuxt 4.
+
+## Quick Start & Installation
+
+Run the interactive setup wizard to configure the module and choose which optional capabilities to enable:
+
+```bash
+npx nuxt-blocks init
+# or directly from GitHub:
+npx github:sol239/blocks init
+```
+
+The interactive CLI will prompt you with checkboxes:
+- **Monaco Code Editor**: Installs `monaco-editor` and `@monaco-editor/loader`
+- **LaTeX Math Rendering**: Installs `katex`
+- **Drawing Canvas**: Installs `pixi.js`
+
+It will automatically update your `nuxt.config.ts` and install the selected dependencies.
+
+### Installation
+
+Install from npm:
+
+```bash
+npm install nuxt-blocks
+```
+
+Or install directly from GitHub (https://github.com/sol239/blocks):
+
+```bash
+npm install github:sol239/blocks
+# or:
+npm install https://github.com/sol239/blocks
+# or with pnpm:
+pnpm add github:sol239/blocks
+# or with yarn:
+yarn add github:sol239/blocks
+```
+
+And add it to your `nuxt.config.ts`:
+
+```typescript
+export default defineNuxtConfig({
+  modules: [
+    ['nuxt-blocks', {
+      code: false,    // Default: false. Enables Monaco code editor blocks
+      math: false,    // Default: false. Enables KaTeX math blocks and inline math in toolbar
+      drawing: false, // Default: false. Enables Pixi.js drawing blocks
+    }]
+  ]
+})
+```
+
+When optional capabilities are disabled (`false` by default):
+- Block types (`code`, `math`, `drawing`) are excluded from the wrapper's "Turn into" menu.
+- Inline math is hidden from the text formatting toolbar, and math shortcuts are disabled.
+- Heavy dependencies (`monaco-editor`, `katex`, `pixi.js`) are neither required nor bundled.
+
+---
+
+## Architecture & Concepts
 
 Every block receives a `Block` instance through `v-model:block` and renders inside `BlockWrapper`.
 The page's block list lives in `useBlocksStore`, with actions to add and delete blocks.
@@ -12,8 +74,7 @@ Each type has its own settings class implementing `IBlockSettings` directly. The
 All settings include `alignment` (left, center, right, or justify).
 Edits preserve identity, version, and settings. JSON restoration recreates the corresponding settings class.
 
-Use the block picker to add a block. Code and math are enabled by default through
-`AppConfiguration.codeBlocksAllowed` and `mathAllowed`. The text toolbar appears below the page blocks.
+Code, math, and drawing blocks are gated via `AppConfiguration.codeBlocksAllowed`, `mathAllowed`, and `drawingBlocksAllowed` (all default to `false`). The text toolbar appears below the page blocks.
 
 For an empty paragraph, heading, bulleted list, numbered list, or quote, press Backspace twice
 to delete the block. List markers (`-`, `1.`, and `>`) do not count as content.
@@ -157,6 +218,17 @@ and invalid expressions displayed as errors without interrupting editing.
 ##### Keyboard shortcuts
 
 Enter inserts a newline. Tab moves between the display checkbox and source.
+Alt+Enter inserts a paragraph after this block.
+
+#### Drawing (uses PixiJS)
+
+Data contains stroke points serialized as JSON (`{"strokes": [...]}`).
+Settings: `DrawingBlockSettings`.
+Uses PixiJS for high-frequency client-side rendering while preserving immutable block updates on pointer release.
+
+##### Pointer interaction
+
+Pointer down initiates a stroke, pointer move renders local points with high refresh rate, and pointer release commits the stroke as an immutable block data update.
 Alt+Enter inserts a paragraph after this block.
 
 ---

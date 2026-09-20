@@ -141,6 +141,7 @@ import { Block, type BlockType } from "~/core/blocks/Block";
 import type { BlockAllignment } from "~/core/blocks/IBlockSettings";
 import { blockLabels, createBlock } from "~/core/blocks/registry";
 import { stripMarker, normalizeMarkedText, type MarkedKind } from "~/core/blocks/markedText";
+import { useBlocksConfig } from "~/composables/useBlocksConfig";
 
 const props = withDefaults(
   defineProps<{
@@ -181,6 +182,7 @@ const blockIcons: Record<BlockType, string> = {
   audio: "material-symbols:audio-file",
   code: "material-symbols:code",
   math: "material-symbols:function",
+  drawing: "material-symbols:draw",
 };
 
 function getBlockIcon(type: BlockType | null | undefined): string {
@@ -232,22 +234,33 @@ function hasEmptyEditableData() {
   return data.trim() === "";
 }
 
-const availableBlockTypes: BlockType[] = [
-  "paragraph",
-  "heading1",
-  "heading2",
-  "heading3",
-  "bulletedList",
-  "numberedList",
-  "quote",
-  "divider",
-  "code",
-  "math",
-  "link",
-  "image",
-  "video",
-  "audio",
-];
+const config = useBlocksConfig();
+
+const availableBlockTypes = computed<BlockType[]>(() => {
+  const types: BlockType[] = [
+    "paragraph",
+    "heading1",
+    "heading2",
+    "heading3",
+    "bulletedList",
+    "numberedList",
+    "quote",
+    "divider",
+  ];
+
+  if (config.codeBlocksAllowed) {
+    types.push("code");
+  }
+  if (config.mathAllowed) {
+    types.push("math");
+  }
+  if (config.drawingBlocksAllowed) {
+    types.push("drawing");
+  }
+
+  types.push("link", "image", "video", "audio");
+  return types;
+});
 
 function toggleTurnInto() {
   turnIntoOpen.value = !turnIntoOpen.value;
@@ -259,6 +272,13 @@ function toggleTurnInto() {
 
 function turnInto(targetType: BlockType) {
   if (!props.block) return;
+  if (
+    (targetType === "code" && !config.codeBlocksAllowed) ||
+    (targetType === "math" && !config.mathAllowed) ||
+    (targetType === "drawing" && !config.drawingBlocksAllowed)
+  ) {
+    return;
+  }
   if (props.block.blockType === targetType) {
     turnIntoOpen.value = false;
     open.value = false;
@@ -276,6 +296,8 @@ function turnInto(targetType: BlockType) {
       .join("\n");
   } else if (currentType === "divider" && rawText === "---") {
     rawText = "";
+  } else if (currentType === "drawing") {
+    rawText = "";
   }
 
   let newData = rawText;
@@ -287,6 +309,8 @@ function turnInto(targetType: BlockType) {
     newData = rawText ? normalizeMarkedText(rawText, "quote") : "> ";
   } else if (targetType === "divider") {
     newData = "---";
+  } else if (targetType === "drawing") {
+    newData = JSON.stringify({ strokes: [] });
   }
 
   // Determine appropriate font size for target block

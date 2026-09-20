@@ -13,6 +13,7 @@
     <TextToolbar
       :visible="isTextToolbarVisible"
       :block="focusedBlock"
+      @update:block="onToolbarUpdateBlock"
       @update:settings="onUpdateFocusedBlockSettings"
     />
   </div>
@@ -50,16 +51,42 @@ const props = defineProps<Props>();
 
 /**
  * Demo dataset representing the Czech Lands journey blocks.
- * Uses concrete block subclasses extending Block.
+ * Uses concrete block subclasses extending Block with rich styling spans.
  */
 const demoBlocks: Block[] = [
-  new Heading1Block("title", 1, "A Journey Through the Czech Lands"),
+  new Heading1Block("title", 1, "A Journey Through the Czech Lands", {
+    styles: [
+      { start: 0, end: 22, style: "normal" },
+      { start: 22, end: 33, style: "bold" },
+    ],
+    colors: [
+      { start: 22, end: 33, color: "#2563eb" },
+    ],
+  }),
   new ParagraphBlock(
     "introduction",
     1,
     "At the crossroads of Central Europe lies a landscape shaped by ancient settlements, royal ambition, artistic courage, and an enduring sense of identity. From the valleys of Bohemia to the hills of Moravia, every era has left a visible mark.",
+    {
+      styles: [
+        { start: 0, end: 21, style: "normal" },
+        { start: 21, end: 35, style: "bold" },
+        { start: 35, end: 236, style: "normal" },
+      ],
+      colors: [
+        { start: 21, end: 35, color: "#dc2626" },
+      ],
+    },
   ),
-  new Heading2Block("origins-title", 1, "From Early Settlements to a Kingdom"),
+  new Heading2Block("origins-title", 1, "From Early Settlements to a Kingdom", {
+    styles: [
+      { start: 0, end: 26, style: "normal" },
+      { start: 26, end: 35, style: "bold underline" },
+    ],
+    colors: [
+      { start: 26, end: 35, color: "#16a34a" },
+    ],
+  }),
   new ParagraphBlock(
     "origins",
     1,
@@ -69,9 +96,28 @@ const demoBlocks: Block[] = [
   new ParagraphBlock(
     "turning-point",
     1,
-    "The fourteenth century brought an extraordinary cultural flourishing. Under Charles IV, Prague became an imperial capital filled with ambitious architecture, scholarship, and trade. The university, stone bridge, and cathedral begun during his reign still define the city today.",
+    "The fourteenth century brought an extraordinary cultural flourishing. Under Charles IV (calculating with formula E = mc^2), Prague became an imperial capital filled with ambitious architecture, scholarship, and trade. The university, stone bridge, and cathedral begun during his reign still define the city today.",
+    {
+      styles: [
+        { start: 0, end: 113, style: "normal" },
+        { start: 113, end: 120, style: "math" },
+        { start: 120, end: 310, style: "normal" },
+      ],
+      colors: [
+        { start: 113, end: 120, color: "#2563eb" },
+      ],
+    },
   ),
-  new Heading2Block("legacy-title", 1, "A Living History"),
+  new Heading2Block("legacy-title", 1, "A Living History", {
+    styles: [
+      { start: 0, end: 2, style: "normal" },
+      { start: 2, end: 8, style: "italic" },
+      { start: 8, end: 16, style: "normal" },
+    ],
+    colors: [
+      { start: 2, end: 8, color: "#2563eb" },
+    ],
+  }),
   new ParagraphBlock(
     "legacy",
     1,
@@ -160,6 +206,14 @@ function onUpdateBlock(index: number, block: Block) {
   blocks.value[index] = block;
   if (focusedBlock.value?.id === block.id) {
     focusedBlock.value = block;
+  }
+}
+
+function onToolbarUpdateBlock(updated: Block) {
+  const index = blocks.value.findIndex((b) => b.id === updated.id);
+  if (index !== -1) {
+    blocks.value[index] = updated;
+    focusedBlock.value = updated;
   }
 }
 

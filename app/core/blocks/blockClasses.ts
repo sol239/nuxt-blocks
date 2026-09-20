@@ -14,6 +14,7 @@ import { VideoBlock } from "./VideoBlock";
 import { AudioBlock } from "./AudioBlock";
 import { CodeBlock } from "./CodeBlock";
 import { MathBlock } from "./MathBlock";
+import { DrawingBlock } from "./DrawingBlock";
 
 export const blockClasses = {
   paragraph: ParagraphBlock,
@@ -30,6 +31,7 @@ export const blockClasses = {
   audio: AudioBlock,
   code: CodeBlock,
   math: MathBlock,
+  drawing: DrawingBlock,
 } as const;
 
 export type BlockClassMap = typeof blockClasses;
@@ -59,7 +61,13 @@ Block.setDeserializer((json) => {
 });
 
 export function initialBlockData(type: BlockType): string {
-  return ({ divider: "---", bulletedList: "- ", numberedList: "1. ", quote: "> " } as Partial<Record<BlockType, string>>)[type] ?? "";
+  return ({
+    divider: "---",
+    bulletedList: "- ",
+    numberedList: "1. ",
+    quote: "> ",
+    drawing: JSON.stringify({ strokes: [] }),
+  } as Partial<Record<BlockType, string>>)[type] ?? "";
 }
 
 export {
@@ -77,4 +85,5 @@ export {
   AudioBlock,
   CodeBlock,
   MathBlock,
+  DrawingBlock,
 };

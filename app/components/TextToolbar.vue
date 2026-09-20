@@ -12,12 +12,13 @@
       class="fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-3rem)] max-w-4xl -translate-x-1/2 items-center justify-between overflow-x-auto rounded-2xl border border-gray-200 bg-white/95 px-4 py-2 shadow-xl backdrop-blur-sm"
       role="toolbar"
       aria-label="Text formatting"
-      @mousedown.prevent
+      @mousedown="onToolbarMouseDown"
     >
       <!-- Left: Text formatting buttons, then Font family & Font size -->
-      <div class="flex items-center gap-2.5" @mousedown.stop>
-        <!-- Formatting buttons: Bold, Underline, Strikethrough, Italic, Code, Math -->
+      <div class="flex items-center gap-2.5">
+        <!-- Formatting buttons: Bold, Italic, Underline, Strikethrough, Code, Math -->
         <div class="flex items-center gap-0.5">
+          <!-- Bold -->
           <button
             type="button"
             class="toolbar-button"
@@ -25,35 +26,13 @@
             :aria-pressed="isBold"
             aria-label="Bold"
             title="Bold (Ctrl+B)"
-            @click="typingStore.toggle('bold')"
+            @mousedown.prevent
+            @click="onFormatClick('bold')"
           >
             <Icon name="material-symbols:format-bold" class="size-5" />
           </button>
 
-          <button
-            type="button"
-            class="toolbar-button"
-            :class="{ 'toolbar-button-active': isUnderlined }"
-            :aria-pressed="isUnderlined"
-            aria-label="Underline"
-            title="Underline (Ctrl+U)"
-            @click="typingStore.toggle('underline')"
-          >
-            <Icon name="material-symbols:format-underlined" class="size-5" />
-          </button>
-
-          <button
-            type="button"
-            class="toolbar-button"
-            :class="{ 'toolbar-button-active': isStrikethrough }"
-            :aria-pressed="isStrikethrough"
-            aria-label="Strikethrough"
-            title="Strikethrough (Ctrl+Shift+X)"
-            @click="typingStore.toggle('strikethrough')"
-          >
-            <Icon name="material-symbols:strikethrough-s" class="size-5" />
-          </button>
-
+          <!-- Italic (the "I", cursive) -->
           <button
             type="button"
             class="toolbar-button"
@@ -61,11 +40,41 @@
             :aria-pressed="isItalic"
             aria-label="Italic"
             title="Italic (Ctrl+I)"
-            @click="typingStore.toggle('italic')"
+            @mousedown.prevent
+            @click="onFormatClick('italic')"
           >
             <Icon name="material-symbols:format-italic" class="size-5" />
           </button>
 
+          <!-- Underline -->
+          <button
+            type="button"
+            class="toolbar-button"
+            :class="{ 'toolbar-button-active': isUnderlined }"
+            :aria-pressed="isUnderlined"
+            aria-label="Underline"
+            title="Underline (Ctrl+U)"
+            @mousedown.prevent
+            @click="onFormatClick('underline')"
+          >
+            <Icon name="material-symbols:format-underlined" class="size-5" />
+          </button>
+
+          <!-- Strikethrough -->
+          <button
+            type="button"
+            class="toolbar-button"
+            :class="{ 'toolbar-button-active': isStrikethrough }"
+            :aria-pressed="isStrikethrough"
+            aria-label="Strikethrough"
+            title="Strikethrough (Ctrl+Shift+X)"
+            @mousedown.prevent
+            @click="onFormatClick('strikethrough')"
+          >
+            <Icon name="material-symbols:strikethrough-s" class="size-5" />
+          </button>
+
+          <!-- Code -->
           <button
             type="button"
             class="toolbar-button"
@@ -73,19 +82,23 @@
             :aria-pressed="isCode"
             aria-label="Code"
             title="Code (Ctrl+E)"
-            @click="typingStore.toggle('code')"
+            @mousedown.prevent
+            @click="onFormatClick('code')"
           >
             <Icon name="material-symbols:code" class="size-5" />
           </button>
 
+          <!-- Math (inline KaTeX) -->
           <button
+            v-if="config.mathAllowed"
             type="button"
             class="toolbar-button"
             :class="{ 'toolbar-button-active': isMath }"
             :aria-pressed="isMath"
             aria-label="Math"
             title="Math (Ctrl+M)"
-            @click="typingStore.toggle('math')"
+            @mousedown.prevent
+            @click="onFormatClick('math')"
           >
             <Icon name="material-symbols:function" class="size-5" />
           </button>
@@ -121,6 +134,8 @@
               :value="currentFontSize"
               class="w-8 bg-transparent text-center text-xs font-medium text-gray-700 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               @input="onFontSizeInput(($event.target as HTMLInputElement).value)"
+              @keydown.enter="onFontSizeEnter"
+              @blur="onFontSizeBlur"
             >
             <span class="text-[10px] text-gray-400 select-none">px</span>
           </div>
@@ -128,7 +143,7 @@
       </div>
 
       <!-- Right: Color selector (centered right) -->
-      <div class="flex items-center gap-2" @mousedown.stop>
+      <div class="flex items-center gap-2">
         <span class="text-xs font-medium text-gray-400 select-none">Color:</span>
         <div class="flex items-center gap-1.5">
           <!-- Preset 1: Black -->
@@ -139,7 +154,8 @@
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
             :class="selectedColor.toLowerCase() === '#000000' ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
             style="background-color: #000000"
-            @click="selectedColor = '#000000'"
+            @mousedown.prevent
+            @click="onColorSelect('#000000')"
           >
             <Icon v-if="selectedColor.toLowerCase() === '#000000'" name="material-symbols:check" class="size-4 text-white" />
           </button>
@@ -152,7 +168,8 @@
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
             :class="selectedColor.toLowerCase() === '#2563eb' ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
             style="background-color: #2563eb"
-            @click="selectedColor = '#2563eb'"
+            @mousedown.prevent
+            @click="onColorSelect('#2563eb')"
           >
             <Icon v-if="selectedColor.toLowerCase() === '#2563eb'" name="material-symbols:check" class="size-4 text-white" />
           </button>
@@ -165,7 +182,8 @@
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
             :class="selectedColor.toLowerCase() === '#dc2626' ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
             style="background-color: #dc2626"
-            @click="selectedColor = '#dc2626'"
+            @mousedown.prevent
+            @click="onColorSelect('#dc2626')"
           >
             <Icon v-if="selectedColor.toLowerCase() === '#dc2626'" name="material-symbols:check" class="size-4 text-white" />
           </button>
@@ -178,7 +196,8 @@
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
             :class="selectedColor.toLowerCase() === '#16a34a' ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
             style="background-color: #16a34a"
-            @click="selectedColor = '#16a34a'"
+            @mousedown.prevent
+            @click="onColorSelect('#16a34a')"
           >
             <Icon v-if="selectedColor.toLowerCase() === '#16a34a'" name="material-symbols:check" class="size-4 text-white" />
           </button>
@@ -191,7 +210,8 @@
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
             :class="isCustomColorSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
             :style="{ backgroundColor: customColor }"
-            @click="selectedColor = customColor"
+            @mousedown.prevent
+            @click="onColorSelect(customColor)"
           >
             <Icon
               v-if="isCustomColorSelected"
@@ -213,6 +233,7 @@
               :value="customColor"
               class="sr-only"
               @input="onCustomColorInput(($event.target as HTMLInputElement).value)"
+              @change="onCustomColorChange"
             >
           </label>
         </div>
@@ -222,9 +243,14 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick } from "vue";
 import { storeToRefs } from "pinia";
 import { useTypingStore } from "~/stores/useTypingStore";
 import type { Block } from "~/core/blocks/Block";
+import { applyStyleToRange, applyColorToRange, type KnownStyle } from "~/core/blocks/textSpans";
+import { useBlocksConfig } from "~/composables/useBlocksConfig";
+
+const config = useBlocksConfig();
 
 const props = withDefaults(
   defineProps<{
@@ -241,6 +267,7 @@ const selectedColor = defineModel<string>("selectedColor", { default: "#000000" 
 
 const emit = defineEmits<{
   "update:settings": [settings: { fontFamily?: string; fontSize?: number }];
+  "update:block": [value: Block];
 }>();
 
 const customColor = ref("#9333ea");
@@ -265,9 +292,123 @@ function isLightColor(hexColor: string): boolean {
   return false;
 }
 
+const typingStore = useTypingStore();
+const {
+  isBold,
+  isItalic,
+  isUnderlined,
+  isStrikethrough,
+  isCode,
+  isMath,
+} = storeToRefs(typingStore);
+
+function onToolbarMouseDown(event: MouseEvent) {
+  // Prevent focus stealing for anything other than selects and inputs
+  const target = event.target as HTMLElement | null;
+  if (!target?.closest("select, input")) {
+    event.preventDefault();
+  }
+}
+
+function restoreBlockFocus() {
+  const blockId = props.block?.id ?? typingStore.activeBlockId;
+  if (!blockId) return;
+
+  const wrapper = document.querySelector<HTMLElement>(`[data-block-id="${blockId}"]`);
+  const textarea = wrapper?.querySelector<HTMLTextAreaElement>("textarea") ??
+    document.querySelector<HTMLTextAreaElement>(`[data-block-id="${blockId}"] textarea`);
+
+  if (textarea) {
+    textarea.focus();
+    if (typingStore.selectionRange) {
+      const { start, end } = typingStore.selectionRange;
+      try {
+        textarea.setSelectionRange(start, end);
+      } catch {
+        // Ignore if element doesn't support selection
+      }
+    }
+  }
+}
+
+function onFormatClick(format: KnownStyle) {
+  if (format === "math" && !config.mathAllowed) {
+    return;
+  }
+
+  if (
+    props.block &&
+    typingStore.selectionRange &&
+    typingStore.selectionRange.start < typingStore.selectionRange.end
+  ) {
+    const text = props.block.data ?? "";
+    const { start, end } = typingStore.selectionRange;
+    const updatedStyles = applyStyleToRange(
+      props.block.blockSettings?.styles ?? [],
+      text.length,
+      start,
+      end,
+      format,
+    );
+    const updated = props.block.withSettings({
+      ...props.block.blockSettings,
+      styles: updatedStyles,
+    });
+    emit("update:block", updated);
+    typingStore.syncFromSpans(
+      updatedStyles,
+      props.block.blockSettings?.colors ?? [],
+      start,
+      end,
+    );
+  } else {
+    typingStore.toggle(format as any);
+  }
+
+  restoreBlockFocus();
+  nextTick(() => {
+    restoreBlockFocus();
+  });
+}
+
+function onColorSelect(color: string) {
+  selectedColor.value = color;
+  typingStore.selectedColor = color;
+
+  if (
+    props.block &&
+    typingStore.selectionRange &&
+    typingStore.selectionRange.start < typingStore.selectionRange.end
+  ) {
+    const text = props.block.data ?? "";
+    const { start, end } = typingStore.selectionRange;
+    const updatedColors = applyColorToRange(
+      props.block.blockSettings?.colors ?? [],
+      text.length,
+      start,
+      end,
+      color,
+    );
+    const updated = props.block.withSettings({
+      ...props.block.blockSettings,
+      colors: updatedColors,
+    });
+    emit("update:block", updated);
+  }
+
+  restoreBlockFocus();
+  nextTick(() => {
+    restoreBlockFocus();
+  });
+}
+
 function onCustomColorInput(color: string) {
   customColor.value = color;
-  selectedColor.value = color;
+  onColorSelect(color);
+}
+
+function onCustomColorChange() {
+  restoreBlockFocus();
 }
 
 const fontFamilies = [
@@ -296,6 +437,10 @@ const currentFontSize = computed(() => {
 
 function onFontFamilyChange(fontFamily: string) {
   emit("update:settings", { fontFamily });
+  restoreBlockFocus();
+  nextTick(() => {
+    restoreBlockFocus();
+  });
 }
 
 function onFontSizeInput(val: string) {
@@ -305,15 +450,13 @@ function onFontSizeInput(val: string) {
   }
 }
 
-const typingStore = useTypingStore();
-const {
-  isBold,
-  isUnderlined,
-  isStrikethrough,
-  isItalic,
-  isCode,
-  isMath,
-} = storeToRefs(typingStore);
+function onFontSizeEnter() {
+  restoreBlockFocus();
+}
+
+function onFontSizeBlur() {
+  restoreBlockFocus();
+}
 
 function handleKeyboardShortcut(event: KeyboardEvent) {
   if (!props.visible) {
@@ -327,17 +470,18 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
   const key = event.key.toLowerCase();
 
   if (key === "b" && !event.shiftKey) {
-    typingStore.toggle("bold");
-  } else if (key === "u" && !event.shiftKey) {
-    typingStore.toggle("underline");
-  } else if (key === "x" && event.shiftKey) {
-    typingStore.toggle("strikethrough");
+    onFormatClick("bold");
   } else if (key === "i" && !event.shiftKey) {
-    typingStore.toggle("italic");
+    onFormatClick("italic");
+  } else if (key === "u" && !event.shiftKey) {
+    onFormatClick("underline");
+  } else if (key === "x" && event.shiftKey) {
+    onFormatClick("strikethrough");
   } else if (key === "e" && !event.shiftKey) {
-    typingStore.toggle("code");
+    onFormatClick("code");
   } else if (key === "m" && !event.shiftKey) {
-    typingStore.toggle("math");
+    if (!config.mathAllowed) return;
+    onFormatClick("math");
   } else {
     return;
   }
