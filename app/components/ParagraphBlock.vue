@@ -1,13 +1,40 @@
 <template>
-    <div class="border border-b-gray-400 rounded-lg p-4">
-        <p> {{ data }} </p>
-    </div>
+  <textarea
+    aria-label="Paragraph"
+    style="text-align: inherit; font-family: inherit; font-size: inherit"
+    :value="block.data ?? ''"
+    class="field-sizing-content block w-full resize-none overflow-hidden bg-transparent leading-7 text-gray-700 focus:outline-none"
+    placeholder="Start writing…"
+    @input="updateData"
+    @select="logSelectedText"
+  />
 </template>
 
 <script setup lang="ts">
+import type { Block } from "~/core/blocks/Block";
 
-const data = ref<string>("Historie českých zemí sahá hluboko do evropského pravěku a zahrnuje řadu významných období, která postupně formovala dnešní podobu českého státu. Území dnešní České republiky bylo v průběhu staletí osídleno různými národy a kulturami. Významnou roli zde sehráli Keltové, Germáni a později Slované, kteří se na tomto území začali usazovat především od 6. století.");
+const props = defineProps<{
+  block: Block;
+}>();
 
+const emit = defineEmits<{
+  "update:block": [value: Block];
+}>();
+
+function updateData(event: Event) {
+  emit(
+    "update:block",
+    props.block.withData((event.currentTarget as HTMLTextAreaElement).value),
+  );
+}
+
+function logSelectedText(event: Event) {
+  const textarea = event.currentTarget as HTMLTextAreaElement;
+  const selectedText = textarea.value.slice(
+    textarea.selectionStart,
+    textarea.selectionEnd,
+  );
+
+  console.log(selectedText);
+}
 </script>
-
-<style lang="css" scoped></style>

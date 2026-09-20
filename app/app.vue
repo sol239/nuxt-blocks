@@ -1,8 +1,9 @@
 <template>
-  <div class="mx-auto max-w-7xl px-6 py-8">
-    <Block></Block>
-
-    <AddBlockPlaceholder />
-
-  </div>
+  <main class="min-h-screen bg-gray-50">
+    <DemoCanvas />
+  </main>
 </template>
+
+<script setup lang="ts">
+import DemoCanvas from "~/components/DemoCanvas.vue";
+</script>
