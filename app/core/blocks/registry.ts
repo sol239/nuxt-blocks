@@ -53,3 +53,21 @@ export const blockLabels: Record<BlockType, string> = {
   math: "Math",
   drawing: "Drawing",
 };
+
+export const blockIcons: Record<BlockType, string> = {
+  paragraph: "material-symbols:notes",
+  heading1: "material-symbols:format-h1",
+  heading2: "material-symbols:format-h2",
+  heading3: "material-symbols:format-h3",
+  divider: "material-symbols:horizontal-rule",
+  bulletedList: "material-symbols:format-list-bulleted",
+  numberedList: "material-symbols:format-list-numbered",
+  quote: "material-symbols:format-quote",
+  link: "material-symbols:link",
+  image: "material-symbols:image",
+  video: "material-symbols:movie",
+  audio: "material-symbols:audio-file",
+  code: "material-symbols:code",
+  math: "material-symbols:function",
+  drawing: "material-symbols:draw",
+};

@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from "vue";
-import { Application, Graphics, Container } from "pixi.js";
+import type { Application, Graphics, Container } from "pixi.js";
 import type { Block } from "~/core/blocks/Block";
 import {
   normalizeDrawingData,
@@ -120,6 +120,27 @@ let strokesContainer: Container | null = null;
 let currentStrokeGraphics: Graphics | null = null;
 let resizeObserver: ResizeObserver | null = null;
 
+let PixiApplication: typeof Application | null = null;
+let PixiContainer: typeof Container | null = null;
+let PixiGraphics: typeof Graphics | null = null;
+
+async function loadPixi() {
+  if (!PixiApplication) {
+    try {
+      const pixi = await import("pixi.js");
+      PixiApplication = pixi.Application;
+      PixiContainer = pixi.Container;
+      PixiGraphics = pixi.Graphics;
+    } catch {
+      console.warn(
+        "pixi.js is not installed or available. Run 'npx nuxt-blocks init' or 'npm install pixi.js' to enable drawing blocks.",
+      );
+      return null;
+    }
+  }
+  return PixiApplication;
+}
+
 // Persistent strokes from block data
 const strokes = ref<DrawingStroke[]>([]);
 
@@ -172,11 +193,12 @@ function renderStrokeToGraphics(
 
 function renderAllStrokes(container: Container, strokeList: DrawingStroke[]) {
   container.removeChildren();
+  if (!PixiGraphics) return;
 
   for (const stroke of strokeList) {
     if (!stroke.points || stroke.points.length === 0) continue;
 
-    const g = new Graphics();
+    const g = new PixiGraphics();
     const isEraser = stroke.tool === "eraser";
     const width = stroke.width || (isEraser ? 20 : 4);
     const color = stroke.color || "#111827";
@@ -424,6 +446,9 @@ watch(
 onMounted(async () => {
   if (!containerRef.value) return;
 
+  const appCtor = await loadPixi();
+  if (!appCtor || !PixiContainer || !PixiGraphics) return;
+
   const container = containerRef.value;
   const initialWidth = container.clientWidth || 800;
   const initialHeight = container.clientHeight || 420;
@@ -431,7 +456,7 @@ onMounted(async () => {
   const normalized = normalizeDrawingData(props.block.data);
   strokes.value = normalized.strokes;
 
-  const app = new Application();
+  const app = new appCtor();
   await app.init({
     width: initialWidth,
     height: initialHeight,
@@ -443,8 +468,8 @@ onMounted(async () => {
 
   pixiApp = app;
 
-  strokesContainer = new Container();
-  currentStrokeGraphics = new Graphics();
+  strokesContainer = new PixiContainer();
+  currentStrokeGraphics = new PixiGraphics();
 
   app.stage.addChild(strokesContainer);
   app.stage.addChild(currentStrokeGraphics);

@@ -170,7 +170,11 @@ test("all 15 block subclasses implement toMarkdown and fromMarkdown correctly", 
 });
 
 test("marker formats and safe media sources", () => {
-  expect(new AppConfiguration()).toMatchObject({ codeBlocksAllowed: true, mathAllowed: true });
+  expect(new AppConfiguration()).toMatchObject({
+    codeBlocksAllowed: false,
+    mathAllowed: false,
+    drawingBlocksAllowed: false,
+  });
   expect(normalizeMarkedText("One\n- Two", "bulletedList")).toBe("- One\n- Two");
   expect(normalizeMarkedText("7. One\n99. Two\nThree", "numberedList")).toBe("1. One\n2. Two\n3. Three");
   expect(normalizeMarkedText("One\n> Two", "quote")).toBe("> One\n> Two");
@@ -427,3 +431,53 @@ test("dist exports public contracts and default module", async () => {
   expect(dist.AppConfiguration).toBeDefined();
   expect(dist.default).toBeDefined();
 });
+
+test("typing / in paragraph block opens turn into dropdown and handles selection and cancellation", async ({ page }) => {
+  await page.goto("/");
+  const newPara = await add(page, "paragraph");
+  const textarea = newPara.locator("textarea");
+  await textarea.click();
+
+  // Type / to open turn into dropdown
+  await page.keyboard.type("/");
+  const dropdown = newPara.locator('[data-testid="turn-into-dropdown"]');
+  await expect(dropdown).toBeVisible();
+
+  // Type while dropdown is open: should filter options and NOT write into paragraph block
+  await page.keyboard.type("head");
+  await expect(textarea).toHaveValue("/");
+  await expect(dropdown.locator('button[data-block-type="heading1"]')).toBeVisible();
+  await expect(dropdown.locator('button[data-block-type="quote"]')).toHaveCount(0);
+
+  // Press Escape to close dropdown: block remains paragraph and keeps / (not 'head')
+  await page.keyboard.press("Escape");
+  await expect(dropdown).toHaveCount(0);
+  await expect(textarea).toHaveValue("/");
+  await expect(newPara.getByLabel("Paragraph block type")).toBeAttached();
+
+  // Clear text
+  await textarea.fill("");
+
+  // Type / again to reopen dropdown
+  await page.keyboard.type("/");
+  await expect(dropdown).toBeVisible();
+
+  // Type '1' to filter to Heading 1 without writing into the textarea
+  await page.keyboard.type("1");
+  await expect(textarea).toHaveValue("/");
+  const h1Button = dropdown.locator('button[data-block-type="heading1"]');
+  await expect(h1Button).toBeVisible();
+
+  // Press Enter to turn into Heading 1
+  await page.keyboard.press("Enter");
+
+  // Verify converted to Heading 1 and / was stripped (not kept)
+  await expect(dropdown).toHaveCount(0);
+  const h1Block = page.locator("[data-block-id]").last();
+  await expect(h1Block.getByLabel("Heading 1 block type")).toBeAttached();
+  const h1Textarea = h1Block.locator("textarea");
+  await expect(h1Textarea).toHaveValue("");
+  await expect(h1Textarea).toBeFocused();
+});
+
+

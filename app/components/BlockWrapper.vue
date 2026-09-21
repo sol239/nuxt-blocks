@@ -139,7 +139,7 @@
 <script setup lang="ts">
 import { Block, type BlockType } from "~/core/blocks/Block";
 import type { BlockAllignment } from "~/core/blocks/IBlockSettings";
-import { blockLabels, createBlock } from "~/core/blocks/registry";
+import { blockLabels, blockIcons, createBlock } from "~/core/blocks/registry";
 import { stripMarker, normalizeMarkedText, type MarkedKind } from "~/core/blocks/markedText";
 import { useBlocksConfig } from "~/composables/useBlocksConfig";
 
@@ -166,24 +166,6 @@ const openUpwards = ref(false);
 const submenuOpenUpwards = ref(false);
 const menuId = useId();
 let emptyBackspaceCount = 0;
-
-const blockIcons: Record<BlockType, string> = {
-  paragraph: "material-symbols:notes",
-  heading1: "material-symbols:format-h1",
-  heading2: "material-symbols:format-h2",
-  heading3: "material-symbols:format-h3",
-  divider: "material-symbols:horizontal-rule",
-  bulletedList: "material-symbols:format-list-bulleted",
-  numberedList: "material-symbols:format-list-numbered",
-  quote: "material-symbols:format-quote",
-  link: "material-symbols:link",
-  image: "material-symbols:image",
-  video: "material-symbols:movie",
-  audio: "material-symbols:audio-file",
-  code: "material-symbols:code",
-  math: "material-symbols:function",
-  drawing: "material-symbols:draw",
-};
 
 function getBlockIcon(type: BlockType | null | undefined): string {
   return blockIcons[type ?? "paragraph"];
@@ -337,6 +319,11 @@ function turnInto(targetType: BlockType) {
   emit("update:block", newBlock);
   turnIntoOpen.value = false;
   open.value = false;
+
+  nextTick(() => {
+    const input = wrapper.value?.querySelector<HTMLElement>("textarea, input, [contenteditable='true'], button");
+    input?.focus();
+  });
 }
 
 function updateMenuDirection() {

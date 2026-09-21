@@ -20,6 +20,7 @@
       class="field-sizing-content relative block w-full resize-none overflow-hidden bg-transparent focus:outline-none whitespace-pre-wrap break-words placeholder:text-gray-400"
       :class="hasFormatting ? 'text-transparent caret-gray-900 selection:bg-blue-500/30' : 'text-inherit'"
       @input="onInput"
+      @keydown="onKeydown"
       @select="onSelection"
       @keyup="onSelection"
       @mouseup="onSelection"
@@ -60,7 +61,12 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   "update:block": [value: Block];
+  "keydown": [event: KeyboardEvent];
 }>();
+
+function onKeydown(event: KeyboardEvent) {
+  emit("keydown", event);
+}
 
 const textareaRef = ref<HTMLTextAreaElement>();
 const typingStore = useTypingStore();
