@@ -9,7 +9,7 @@
   >
     <div
       v-if="visible"
-      class="fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-3rem)] max-w-4xl -translate-x-1/2 items-center justify-between overflow-x-auto rounded-2xl border border-gray-200 bg-white/95 px-4 py-2 shadow-xl backdrop-blur-sm"
+      class="fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-3rem)] max-w-4xl -translate-x-1/2 items-center justify-between rounded-2xl border border-gray-200 bg-white/95 px-4 py-2 shadow-xl backdrop-blur-sm"
       role="toolbar"
       aria-label="Text formatting"
       @mousedown="onToolbarMouseDown"
@@ -109,19 +109,46 @@
 
         <!-- Typography: Font family & Font size -->
         <div class="flex items-center gap-1.5">
-          <!-- Font family select -->
-          <div class="relative flex items-center">
-            <select
-              :value="block?.blockSettings?.fontFamily ?? 'Inter'"
+          <!-- Font family options -->
+          <div ref="fontPicker" class="relative flex items-center">
+            <button
+              type="button"
               aria-label="Font family"
-              class="h-8 cursor-pointer appearance-none rounded-lg border-0 bg-transparent pr-5 pl-2 text-xs font-medium text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-              @change="onFontFamilyChange(($event.target as HTMLSelectElement).value)"
+              aria-haspopup="listbox"
+              :aria-expanded="fontMenuOpen"
+              :aria-controls="fontMenuId"
+              class="flex h-8 cursor-pointer items-center gap-1 rounded-lg border-0 bg-transparent px-2 text-xs font-medium text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+              @click="toggleFontMenu"
+              @keydown.down.prevent="openFontMenu"
+              @keydown.up.prevent="openFontMenu"
             >
-              <option v-for="font in fontFamilies" :key="font" :value="font" :style="{ fontFamily: font }">
-                {{ font }}
-              </option>
-            </select>
-            <Icon name="material-symbols:arrow-drop-down" class="pointer-events-none absolute right-1 size-4 text-gray-400" />
+              <span>{{ currentFontFamily }}</span>
+              <Icon name="material-symbols:arrow-drop-down" class="size-4 text-gray-400" aria-hidden="true" />
+            </button>
+            <div
+              v-if="fontMenuOpen"
+              :id="fontMenuId"
+              ref="fontMenu"
+              role="listbox"
+              aria-label="Font family options"
+              class="absolute bottom-[calc(100%+8px)] left-0 z-20 max-h-64 min-w-44 overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-xl"
+              @keydown="onFontMenuKeydown"
+            >
+              <button
+                v-for="font in fontFamilies"
+                :key="font"
+                type="button"
+                role="option"
+                :aria-selected="currentFontFamily === font"
+                class="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                :class="{ 'bg-blue-50 text-blue-700': currentFontFamily === font }"
+                :style="{ fontFamily: font }"
+                @click="onFontFamilyChange(font)"
+              >
+                <span>{{ font }}</span>
+                <Icon v-if="currentFontFamily === font" name="material-symbols:check" class="size-4" aria-hidden="true" />
+              </button>
+            </div>
           </div>
 
           <!-- Font size input -->
@@ -422,6 +449,47 @@ const fontFamilies = [
   "Verdana",
   "Trebuchet MS",
 ];
+const currentFontFamily = computed(() => props.block?.blockSettings?.fontFamily ?? "Inter");
+const fontPicker = ref<HTMLElement>();
+const fontMenu = ref<HTMLElement>();
+const fontMenuOpen = ref(false);
+const fontMenuId = `font-family-${useId()}`;
+
+function openFontMenu() {
+  fontMenuOpen.value = true;
+  nextTick(() => {
+    const index = Math.max(0, fontFamilies.indexOf(currentFontFamily.value));
+    fontMenu.value?.querySelectorAll<HTMLButtonElement>('[role="option"]')[index]?.focus();
+  });
+}
+
+function closeFontMenu() {
+  fontMenuOpen.value = false;
+  fontPicker.value?.querySelector<HTMLButtonElement>('[aria-haspopup="listbox"]')?.focus();
+}
+
+function toggleFontMenu() {
+  if (fontMenuOpen.value) closeFontMenu();
+  else openFontMenu();
+}
+
+function onFontMenuKeydown(event: KeyboardEvent) {
+  const options = [...(fontMenu.value?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? [])];
+  const index = options.indexOf(document.activeElement as HTMLButtonElement);
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeFontMenu();
+  } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1
+      : (index + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length;
+    options[next]?.focus();
+  }
+}
+
+function onFontPointerDown(event: PointerEvent) {
+  if (fontMenuOpen.value && !fontPicker.value?.contains(event.target as Node)) fontMenuOpen.value = false;
+}
 
 const defaultFontSize = computed(() => {
   const type = props.block?.blockType;
@@ -436,6 +504,7 @@ const currentFontSize = computed(() => {
 });
 
 function onFontFamilyChange(fontFamily: string) {
+  fontMenuOpen.value = false;
   emit("update:settings", { fontFamily });
   restoreBlockFocus();
   nextTick(() => {
@@ -489,8 +558,14 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
   event.preventDefault();
 }
 
-onMounted(() => document.addEventListener("keydown", handleKeyboardShortcut));
-onUnmounted(() => document.removeEventListener("keydown", handleKeyboardShortcut));
+onMounted(() => {
+  document.addEventListener("keydown", handleKeyboardShortcut);
+  document.addEventListener("pointerdown", onFontPointerDown);
+});
+onUnmounted(() => {
+  document.removeEventListener("keydown", handleKeyboardShortcut);
+  document.removeEventListener("pointerdown", onFontPointerDown);
+});
 </script>
 
 <style scoped>

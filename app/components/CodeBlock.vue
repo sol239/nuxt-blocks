@@ -9,15 +9,45 @@
         <span class="size-3 rounded-full bg-[#3a3a3a]" />
       </div>
 
-      <!-- Language select -->
-      <select
-        :value="settings.language"
-        aria-label="Language"
-        class="fleet-lang-select"
-        @change="setLanguage"
-      >
-        <option v-for="language in languages" :key="language" :value="language">{{ language }}</option>
-      </select>
+      <div ref="languagePicker" class="fleet-lang-picker">
+        <button
+          type="button"
+          class="fleet-lang-trigger"
+          aria-label="Language"
+          aria-haspopup="listbox"
+          :aria-expanded="languageMenuOpen"
+          :aria-controls="languageMenuId"
+          @click="toggleLanguageMenu"
+          @keydown.down.prevent="openLanguageMenu"
+          @keydown.up.prevent="openLanguageMenu"
+        >
+          <span>{{ settings.language }}</span>
+          <Icon name="material-symbols:keyboard-arrow-down" class="size-4" aria-hidden="true" />
+        </button>
+        <div
+          v-if="languageMenuOpen"
+          :id="languageMenuId"
+          ref="languageMenu"
+          role="listbox"
+          aria-label="Code language"
+          class="fleet-lang-menu"
+          @keydown="onLanguageMenuKeydown"
+        >
+          <button
+            v-for="language in languages"
+            :key="language"
+            type="button"
+            role="option"
+            :aria-selected="settings.language === language"
+            class="fleet-lang-option"
+            :class="{ 'fleet-lang-option-selected': settings.language === language }"
+            @click="setLanguage(language)"
+          >
+            <span>{{ language }}</span>
+            <Icon v-if="settings.language === language" name="material-symbols:check" class="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Divider -->
@@ -56,8 +86,12 @@ const editorContainer = ref<HTMLElement>();
 const ready = ref(false);
 /** Tracks the editor's content height so the wrapper div can match it exactly. */
 const editorHeight = ref(22 + 16); // one line + top/bottom padding until Monaco loads
-const languages = ["plaintext", "javascript", "typescript", "markup", "css", "python", "json", "bash"];
+const languages = useRuntimeConfig().public.blocks.codeLanguages;
 const settings = computed(() => props.block.blockSettings as CodeBlockSettings);
+const languagePicker = ref<HTMLElement>();
+const languageMenu = ref<HTMLElement>();
+const languageMenuOpen = ref(false);
+const languageMenuId = `code-language-${useId()}`;
 let monaco: typeof Monaco | undefined;
 let editor: Monaco.editor.IStandaloneCodeEditor | undefined;
 let changeListener: Monaco.IDisposable | undefined;
@@ -69,15 +103,55 @@ function monacoLanguage(language: string) {
   return language;
 }
 
-function setLanguage(event: Event) {
+function setLanguage(language: string) {
   emit("update:block", props.block.withSettings(Object.assign(
     new CodeBlockSettings(),
     settings.value,
-    { language: (event.target as HTMLSelectElement).value },
+    { language },
   )));
+  closeLanguageMenu();
+}
+
+function openLanguageMenu() {
+  languageMenuOpen.value = true;
+  nextTick(() => {
+    const index = Math.max(0, languages.indexOf(settings.value.language));
+    languageMenu.value?.querySelectorAll<HTMLButtonElement>('[role="option"]')[index]?.focus();
+  });
+}
+
+function closeLanguageMenu() {
+  languageMenuOpen.value = false;
+  languagePicker.value?.querySelector<HTMLButtonElement>(".fleet-lang-trigger")?.focus();
+}
+
+function toggleLanguageMenu() {
+  if (languageMenuOpen.value) closeLanguageMenu();
+  else openLanguageMenu();
+}
+
+function onLanguageMenuKeydown(event: KeyboardEvent) {
+  const options = [...(languageMenu.value?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? [])];
+  const index = options.indexOf(document.activeElement as HTMLButtonElement);
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeLanguageMenu();
+  } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1
+      : (index + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length;
+    options[next]?.focus();
+  }
+}
+
+function onDocumentPointerDown(event: PointerEvent) {
+  if (languageMenuOpen.value && !languagePicker.value?.contains(event.target as Node)) {
+    languageMenuOpen.value = false;
+  }
 }
 
 onMounted(async () => {
+  document.addEventListener("pointerdown", onDocumentPointerDown);
   if (!editorContainer.value) return;
 
   const loadedMonaco = await loadMonaco();
@@ -175,6 +249,7 @@ watch(() => settings.value.language, (language) => {
 });
 
 onBeforeUnmount(() => {
+  document.removeEventListener("pointerdown", onDocumentPointerDown);
   sizeListener?.dispose();
   changeListener?.dispose();
   editor?.dispose();
@@ -184,7 +259,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .fleet-editor-frame {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #282828;
   border-radius: 8px;
   background-color: #181818;
@@ -192,6 +267,8 @@ onBeforeUnmount(() => {
 }
 
 .fleet-header {
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -205,26 +282,76 @@ onBeforeUnmount(() => {
   background-color: #282828;
 }
 
-.fleet-lang-select {
-  appearance: none;
+.fleet-lang-picker {
+  position: relative;
+}
+
+.fleet-lang-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
   background: transparent;
-  border: none;
   color: #707070;
   font-size: 12px;
   font-family: 'JetBrains Mono', Consolas, monospace;
   cursor: pointer;
-  padding: 2px 4px;
-  outline: none;
-  text-align: right;
 }
 
-.fleet-lang-select:hover {
-  color: #a0a0a0;
-}
-
-.fleet-lang-select option {
-  background: #1e1e1e;
+.fleet-lang-trigger:hover,
+.fleet-lang-trigger[aria-expanded="true"] {
+  border-color: #333;
+  background: #292929;
   color: #d0d0d0;
+}
+
+.fleet-lang-trigger:focus-visible,
+.fleet-lang-option:focus-visible {
+  outline: 1px solid #5b8fc2;
+  outline-offset: 1px;
+}
+
+.fleet-lang-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 20;
+  width: 172px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid #383838;
+  border-radius: 7px;
+  background: #1e1e1e;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 45%);
+}
+
+.fleet-lang-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #d0d0d0;
+  font: 12px 'JetBrains Mono', Consolas, monospace;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fleet-lang-option:hover,
+.fleet-lang-option:focus-visible {
+  background: #303030;
+}
+
+.fleet-lang-option-selected {
+  color: #8dbbea;
+  background: #26354a;
 }
 
 /* Height is driven by JS (editorHeight ref) — no fixed height here */
@@ -249,4 +376,3 @@ onBeforeUnmount(() => {
   background: rgb(255 255 255 / 18%) !important;
 }
 </style>
-

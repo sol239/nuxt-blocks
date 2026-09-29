@@ -4,6 +4,7 @@ export interface ModuleOptions {
   code?: boolean;
   math?: boolean;
   drawing?: boolean;
+  codeLanguages?: string[];
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -18,6 +19,7 @@ export default defineNuxtModule<ModuleOptions>({
     code: false,
     math: false,
     drawing: false,
+    codeLanguages: ["plaintext", "javascript", "typescript", "html", "css", "python", "json", "bash"],
   },
   setup(options, nuxt) {
     const resolver = createResolver(import.meta.url);
@@ -28,6 +30,7 @@ export default defineNuxtModule<ModuleOptions>({
       code: Boolean(options.code),
       math: Boolean(options.math),
       drawing: Boolean(options.drawing),
+      codeLanguages: options.codeLanguages ?? ["plaintext", "javascript", "typescript", "html", "css", "python", "json", "bash"],
     };
 
     // Auto-register block components
@@ -59,4 +62,3 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.options.css.push(resolver.resolve("../app/assets/css/main.css"));
   },
 });
-

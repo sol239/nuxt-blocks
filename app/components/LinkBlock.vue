@@ -52,7 +52,7 @@
         class="min-w-0 flex-1 flex flex-col justify-center focus:outline-none"
         :aria-label="(title ?? displayHost) + ' - ' + displayHost"
       >
-        <p class="truncate text-sm font-medium leading-5 text-gray-900 hover:text-blue-600 transition">{{ title ?? displayHost }}</p>
+        <p class="truncate text-sm font-medium leading-5 text-gray-900">{{ title ?? displayHost }}</p>
         <p class="truncate text-xs leading-4 text-gray-400">{{ displayHost }}</p>
       </a>
 

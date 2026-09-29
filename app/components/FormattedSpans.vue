@@ -43,11 +43,14 @@ function renderKatex(text: string): string {
 
 function getSpanClasses(span: RenderSpan): string[] {
   const classes: string[] = [];
-  if (span.styles.includes("bold")) classes.push("font-bold");
+  // The text is painted behind a plain textarea. Font changes here alter glyph
+  // advances without changing the textarea's selection geometry. Paint bold
+  // weight without changing the inline layout instead.
+  if (span.styles.includes("bold")) classes.push("rich-text-bold");
   if (span.styles.includes("italic") || span.styles.includes("inverse")) classes.push("italic");
   if (span.styles.includes("underline")) classes.push("underline");
   if (span.styles.includes("strikethrough")) classes.push("line-through");
-  if (span.styles.includes("code")) classes.push("font-mono bg-gray-100 text-red-600 rounded px-1 text-[0.9em]");
+  if (span.styles.includes("code")) classes.push("bg-gray-100 text-red-600 rounded");
   return classes;
 }
 
@@ -59,3 +62,11 @@ function getSpanStyles(span: RenderSpan): Record<string, string> {
   return styles;
 }
 </script>
+
+<style scoped>
+.rich-text-bold {
+  -webkit-text-stroke: 0.45px currentColor;
+  paint-order: stroke fill;
+}
+
+</style>
