@@ -55,11 +55,17 @@ export function resamplePoints(
   minDistance: number = MIN_POINT_DISTANCE,
 ): DrawingPoint[] {
   if (points.length <= 2) {
-    return points.map(p => ({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 }));
+    return points.map((p) => ({
+      x: Math.round(p.x * 10) / 10,
+      y: Math.round(p.y * 10) / 10,
+    }));
   }
 
   const result: DrawingPoint[] = [
-    { x: Math.round(points[0]!.x * 10) / 10, y: Math.round(points[0]!.y * 10) / 10 },
+    {
+      x: Math.round(points[0]!.x * 10) / 10,
+      y: Math.round(points[0]!.y * 10) / 10,
+    },
   ];
   let lastAdded = points[0]!;
 
@@ -95,7 +101,7 @@ export function smoothPoints(
   smoothing: number = 0.5,
 ): DrawingPoint[] {
   if (points.length <= 2 || smoothing <= 0.01) {
-    return points.map(p => ({
+    return points.map((p) => ({
       x: Math.round(p.x * 10) / 10,
       y: Math.round(p.y * 10) / 10,
     }));
@@ -128,17 +134,26 @@ export function smoothPoints(
 
     // Blend control point towards chord midpoint based on smoothing
     const chordMid = { x: (m1.x + m2.x) / 2, y: (m1.y + m2.y) / 2 };
-    const cx = pControl.x * (1 - clampedSmoothing * 0.5) + chordMid.x * (clampedSmoothing * 0.5);
-    const cy = pControl.y * (1 - clampedSmoothing * 0.5) + chordMid.y * (clampedSmoothing * 0.5);
+    const cx =
+      pControl.x * (1 - clampedSmoothing * 0.5) +
+      chordMid.x * (clampedSmoothing * 0.5);
+    const cy =
+      pControl.y * (1 - clampedSmoothing * 0.5) +
+      chordMid.y * (clampedSmoothing * 0.5);
 
     const dist = getDistance(m1, m2);
-    const steps = Math.max(2, Math.min(5, Math.ceil((dist / 8) * (0.5 + clampedSmoothing * 0.5))));
+    const steps = Math.max(
+      2,
+      Math.min(5, Math.ceil((dist / 8) * (0.5 + clampedSmoothing * 0.5))),
+    );
 
     for (let s = 1; s <= steps; s++) {
       const t = s / steps;
       const oneMinusT = 1 - t;
-      const x = oneMinusT * oneMinusT * m1.x + 2 * oneMinusT * t * cx + t * t * m2.x;
-      const y = oneMinusT * oneMinusT * m1.y + 2 * oneMinusT * t * cy + t * t * m2.y;
+      const x =
+        oneMinusT * oneMinusT * m1.x + 2 * oneMinusT * t * cx + t * t * m2.x;
+      const y =
+        oneMinusT * oneMinusT * m1.y + 2 * oneMinusT * t * cy + t * t * m2.y;
       result.push({
         x: Math.round(x * 10) / 10,
         y: Math.round(y * 10) / 10,
@@ -165,7 +180,7 @@ export function buildStrokePath(
   smoothing: number = 0.5,
 ): DrawingPoint[] {
   if (!useCurve || points.length <= 2) {
-    return points.map(p => ({
+    return points.map((p) => ({
       x: Math.round(p.x * 10) / 10,
       y: Math.round(p.y * 10) / 10,
     }));

@@ -19,7 +19,9 @@ This guide is the single source of truth for developing, maintaining, and extend
 ## 2. Core Domain Model & Polymorphic Contracts
 
 ### 2.1 The `Block` Base Class
+
 Located at `app/core/blocks/Block.ts`. Every block in the application inherits from this base class:
+
 - **Properties**:
   - `id: string`: Unique block identifier (UUID or stable key).
   - `version: number`: Version counter for optimistic updates / history.
@@ -38,25 +40,26 @@ Located at `app/core/blocks/Block.ts`. Every block in the application inherits f
   - Nuxt hydration preserves concrete class instances via `app/plugins/block-payload.ts`.
 
 ### 2.2 The 15 Block Subclasses & Concrete Settings
+
 Each block type has its own concrete class extending `Block` (`app/core/blocks/blockClasses.ts`) and its own concrete settings class implementing `IBlockSettings` directly:
 
-| Block Type | Block Class | Settings Class | Stored `data` Format |
-|---|---|---|---|
-| `paragraph` | `ParagraphBlock` | `ParagraphBlockSettings` | Raw plain text |
-| `heading1` | `Heading1Block` | `Heading1BlockSettings` | Heading level 1 text |
-| `heading2` | `Heading2Block` | `Heading2BlockSettings` | Heading level 2 text |
-| `heading3` | `Heading3Block` | `Heading3BlockSettings` | Heading level 3 text |
-| `divider` | `DividerBlock` | `DividerBlockSettings` | Fixed as `---` |
-| `bulletedList`| `BulletedListBlock`| `BulletedListBlockSettings` | Markdown lines: `- item` |
-| `numberedList`| `NumberedListBlock`| `NumberedListBlockSettings` | Markdown lines: `1. item` |
-| `quote` | `QuoteBlock` | `QuoteBlockSettings` | Markdown lines: `> item` |
-| `link` | `LinkBlock` | `LinkBlockSettings` | Plain URL |
-| `image` | `ImageBlock` | `ImageBlockSettings` | URL or base64 data string |
-| `video` | `VideoBlock` | `VideoBlockSettings` | URL or base64 data string |
-| `audio` | `AudioBlock` | `AudioBlockSettings` | URL or base64 data string |
-| `code` | `CodeBlock` | `CodeBlockSettings` | Source code string |
-| `math` | `MathBlock` | `MathBlockSettings` | LaTeX string (e.g. `E = mc^2`) |
-| `drawing` | `DrawingBlock` | `DrawingBlockSettings` | JSON string: `{"strokes":[...]}` |
+| Block Type     | Block Class         | Settings Class              | Stored `data` Format             |
+| -------------- | ------------------- | --------------------------- | -------------------------------- |
+| `paragraph`    | `ParagraphBlock`    | `ParagraphBlockSettings`    | Raw plain text                   |
+| `heading1`     | `Heading1Block`     | `Heading1BlockSettings`     | Heading level 1 text             |
+| `heading2`     | `Heading2Block`     | `Heading2BlockSettings`     | Heading level 2 text             |
+| `heading3`     | `Heading3Block`     | `Heading3BlockSettings`     | Heading level 3 text             |
+| `divider`      | `DividerBlock`      | `DividerBlockSettings`      | Fixed as `---`                   |
+| `bulletedList` | `BulletedListBlock` | `BulletedListBlockSettings` | Markdown lines: `- item`         |
+| `numberedList` | `NumberedListBlock` | `NumberedListBlockSettings` | Markdown lines: `1. item`        |
+| `quote`        | `QuoteBlock`        | `QuoteBlockSettings`        | Markdown lines: `> item`         |
+| `link`         | `LinkBlock`         | `LinkBlockSettings`         | Plain URL                        |
+| `image`        | `ImageBlock`        | `ImageBlockSettings`        | URL or base64 data string        |
+| `video`        | `VideoBlock`        | `VideoBlockSettings`        | URL or base64 data string        |
+| `audio`        | `AudioBlock`        | `AudioBlockSettings`        | URL or base64 data string        |
+| `code`         | `CodeBlock`         | `CodeBlockSettings`         | Source code string               |
+| `math`         | `MathBlock`         | `MathBlockSettings`         | LaTeX string (e.g. `E = mc^2`)   |
+| `drawing`      | `DrawingBlock`      | `DrawingBlockSettings`      | JSON string: `{"strokes":[...]}` |
 
 > [!IMPORTANT]
 > **No Shared Settings Base Class**: Do NOT create a shared base class for settings. Each settings class must directly implement `IBlockSettings`.
@@ -69,21 +72,23 @@ Each block type has its own concrete class extending `Block` (`app/core/blocks/b
 Located in `app/core/blocks/textSpans.ts`. Text blocks (`paragraph`, `heading1`, `heading2`, `heading3`, `bulletedList`, `numberedList`, `quote`) support inline formatting, text coloring, and rounded highlights via compact range-based spans. Highlight colors are stored as `highlight:#rrggbb` tokens in `StyleSpan.style`; this preserves them through existing immutable block updates, JSON persistence, and text reconciliation. Use `applyHighlightToRange` to recolor/remove highlights while preserving other styles, and `highlightColor` to read them.
 
 ### 3.1 Data Structures
+
 ```ts
 export interface StyleSpan {
   start: number; // 0-based character index (inclusive)
-  end: number;   // 0-based character index (exclusive)
+  end: number; // 0-based character index (exclusive)
   style: string; // "normal", "bold", "italic", "underline", "strikethrough", "code", "math"
 }
 
 export interface ColorSpan {
   start: number; // 0-based character index (inclusive)
-  end: number;   // 0-based character index (exclusive)
+  end: number; // 0-based character index (exclusive)
   color: string; // CSS color string (e.g. "#2563eb")
 }
 ```
 
 ### 3.2 Pure Functions (`app/core/blocks/textSpans.ts`)
+
 - `normalizeStyleSpans(spans, textLength)`: Clamps ranges, sorts, merges contiguous identical styles, fills gaps with `"normal"`.
 - `normalizeColorSpans(spans, textLength)`: Clamps, sorts, and merges adjacent color ranges.
 - `applyStyleToRange(spans, textLength, start, end, targetStyle)`: Toggles or adds a style flag across `[start, end)`.
@@ -92,6 +97,7 @@ export interface ColorSpan {
 - `buildRenderSpans(text, styles, colors)`: Intersects style spans and color spans into disjoint `RenderSpan[]` for rendering.
 
 ### 3.3 Visual Layering & Dual-Layer WYSIWYG
+
 - **Dual-Layer Architecture (`RichTextEditor.vue`)**:
   1. **Backdrop layer (`FormattedSpans.vue`)**: Positioned absolute behind the textarea (`pointer-events-none select-none`). Renders styled spans with `font-bold`, `italic`, `underline`, `line-through`, `font-mono bg-gray-100`, custom text color, or **KaTeX inline math** (`katex.renderToString(span.text)`).
   2. **Interactive layer (`<textarea>`)**: Transparent native textarea (`text-transparent caret-gray-900 selection:bg-blue-500/30`) on top. Handles native cursor navigation, keyboard shortcuts, IME, undo/redo, and text selection. When no formatting is active, falls back to `text-inherit`.
@@ -114,6 +120,7 @@ flowchart TD
 ```
 
 ### 4.1 Component Contracts
+
 1. **Block Props & Events**:
    - Every block component must accept `:block="block"` as an instance of `Block`.
    - Every editable component must emit `"update:block", [value: Block]`.
@@ -150,10 +157,11 @@ flowchart TD
 `DrawingBlock` represents the 15th polymorphic block subclass, implementing a vector drawing canvas with **Pen** and **Eraser** tools using PixiJS v8 (`pixi.js`).
 
 ### 5.1 Architecture & Invariants
+
 - **Data Model**: Stored in `block.data` as JSON string:
   ```ts
   interface DrawingStroke {
-    tool: "pen" | "eraser";
+    tool: 'pen' | 'eraser';
     points: Array<{ x: number; y: number }>;
     width: number;
     color?: string;
@@ -181,6 +189,7 @@ flowchart TD
 > **Focus Invariant**: Clicking any control in `TextToolbar.vue` (Bold, Italic, Underline, Strikethrough, Code, Math, Color, Font family, Font size) **MUST NOT** cause the text block to lose focus or cause the toolbar to close.
 
 ### How Focus is Preserved:
+
 1. **Preventing Focus Stealing on Click**:
    - All buttons in `TextToolbar.vue` have `@mousedown.prevent`.
    - The toolbar container has `@mousedown="onToolbarMouseDown"`, which calls `event.preventDefault()` unless the user is clicking on `<select>` or `<input>`.
@@ -198,15 +207,17 @@ flowchart TD
 ## 7. Development & Verification Workflow
 
 1. **Static Analysis & Type Checking**:
+
    ```bash
    npx nuxi typecheck
    ```
+
    Must always pass with 0 errors before finishing any task.
 
 2. **Testing**:
    - E2E tests are configured in `tests/blocks.spec.ts`.
    - Run tests with `npx playwright test`.
-   - *Note*: If the user specifies not to run test suites during interactive prototyping, rely on `npx nuxi typecheck` and targeted scratch verification scripts.
+   - _Note_: If the user specifies not to run test suites during interactive prototyping, rely on `npx nuxi typecheck` and targeted scratch verification scripts.
 
 3. **Adding a New Block Type**:
    1. Create settings class in `app/core/blocks/<Name>BlockSettings.ts` implementing `IBlockSettings`.

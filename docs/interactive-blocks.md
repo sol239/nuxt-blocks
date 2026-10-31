@@ -4,13 +4,13 @@ A useful answer can become something you explore. A trip estimate can let you ad
 
 The **Interactive** block supports five kinds of experience. Each combines content with controls that fit the task, and stores its state in the document.
 
-| Type (`kind`) | Controls | Result |
-| --- | --- | --- |
-| `calculator` | Sliders for quantities | Live total and proportional breakdown |
-| `bill-splitter` | Amount and people fields, tip presets | Exact rounded shares, total, and tip |
-| `comparison` | Budget filter and option selection | Comparable cards and a recorded choice |
-| `checklist` | Checkboxes, add-step form, remove buttons | Completion count and progress bar |
-| `quiz` | Answer selection, check answers, try again | Score, corrections, and explanations |
+| Type (`kind`)   | Controls                                   | Result                                 |
+| --------------- | ------------------------------------------ | -------------------------------------- |
+| `calculator`    | Sliders for quantities                     | Live total and proportional breakdown  |
+| `bill-splitter` | Amount and people fields, tip presets      | Exact rounded shares, total, and tip   |
+| `comparison`    | Budget filter and option selection         | Comparable cards and a recorded choice |
+| `checklist`     | Checkboxes, add-step form, remove buttons  | Completion count and progress bar      |
+| `quiz`          | Answer selection, check answers, try again | Score, corrections, and explanations   |
 
 ## Try it in a document
 
@@ -30,7 +30,9 @@ import {
 
 const experience = defaultInteractiveExperience('checklist');
 experience.title = 'Prepare our launch';
-const block = ref(new InteractiveBlock('launch-plan', 1, JSON.stringify(experience)));
+const block = ref(
+  new InteractiveBlock('launch-plan', 1, JSON.stringify(experience)),
+);
 
 // Validate generated or user-supplied JSON before using it:
 const checked = parseInteractiveExperience(block.value.data);

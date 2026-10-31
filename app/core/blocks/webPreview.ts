@@ -1,10 +1,13 @@
 export const MAX_WEB_FILE_BYTES = 2 * 1024 * 1024;
 
 /** Scripts execute only in the opaque-origin sandbox, never in the host DOM. */
-export function buildWebPreview(html: string, tailwindRuntime = ""): string {
-  const policy = "default-src 'none'; script-src 'unsafe-inline' https:; style-src 'unsafe-inline' https:; img-src https: data: blob:; font-src https: data:; media-src https: data: blob:; connect-src https:; base-uri 'none'; form-action 'none'; object-src 'none'";
+export function buildWebPreview(html: string, tailwindRuntime = ''): string {
+  const policy =
+    "default-src 'none'; script-src 'unsafe-inline' https:; style-src 'unsafe-inline' https:; img-src https: data: blob:; font-src https: data:; media-src https: data: blob:; connect-src https:; base-uri 'none'; form-action 'none'; object-src 'none'";
   // Escape closing script sequences in the bundled runtime before embedding in HTML.
-  const tailwind = tailwindRuntime ? `<script>${tailwindRuntime.replace(/<\/script/gi, '<\\/script')}</script>` : '';
+  const tailwind = tailwindRuntime
+    ? `<script>${tailwindRuntime.replace(/<\/script/gi, '<\\/script')}</script>`
+    : '';
   return `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${policy}"><meta name="viewport" content="width=device-width, initial-scale=1">${tailwind}${html}`;
 }
 

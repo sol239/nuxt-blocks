@@ -1,5 +1,5 @@
-import type { IBlockSettings } from "./IBlockSettings";
-import type { settingsClasses } from "./settings";
+import type { IBlockSettings } from './IBlockSettings';
+import type { settingsClasses } from './settings';
 
 export type BlockType = keyof typeof settingsClasses;
 
@@ -13,7 +13,10 @@ export interface BlockJSON<TSettings extends IBlockSettings = IBlockSettings> {
 
 export type BlockDeserializer = (json: BlockJSON<any>) => Block<any>;
 
-const subclassRegistry = new Map<BlockType, new (...args: any[]) => Block<any>>();
+const subclassRegistry = new Map<
+  BlockType,
+  new (...args: any[]) => Block<any>
+>();
 let deserializer: BlockDeserializer | null = null;
 
 export abstract class Block<TSettings extends IBlockSettings = IBlockSettings> {
@@ -74,7 +77,10 @@ export abstract class Block<TSettings extends IBlockSettings = IBlockSettings> {
     return this;
   }
 
-  static registerSubclass(type: BlockType, ctor: new (...args: any[]) => Block<any>) {
+  static registerSubclass(
+    type: BlockType,
+    ctor: new (...args: any[]) => Block<any>,
+  ) {
     subclassRegistry.set(type, ctor);
   }
 

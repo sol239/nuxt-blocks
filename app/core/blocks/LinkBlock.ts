@@ -1,10 +1,13 @@
-import { Block } from "./Block";
-import { LinkBlockSettings } from "./LinkBlockSettings";
+import { Block } from './Block';
+import { LinkBlockSettings } from './LinkBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class LinkBlock extends Block<LinkBlockSettings> {
-  readonly blockType = "link" as const;
+  readonly blockType = 'link' as const;
   blockSettings: LinkBlockSettings;
 
   constructor(
@@ -18,8 +21,8 @@ export class LinkBlock extends Block<LinkBlockSettings> {
   }
 
   toMarkdown(): string {
-    const url = this.data?.trim() ?? "";
-    if (!url) return "";
+    const url = this.data?.trim() ?? '';
+    if (!url) return '';
     return `[${url}](${url})`;
   }
 
@@ -28,10 +31,10 @@ export class LinkBlock extends Block<LinkBlockSettings> {
     if (match && match[1]) {
       this.data = match[1].trim();
     } else {
-      this.data = markdown.replace(/^<|>$/g, "").trim();
+      this.data = markdown.replace(/^<|>$/g, '').trim();
     }
     return this;
   }
 }
 
-Block.registerSubclass("link", LinkBlock);
+Block.registerSubclass('link', LinkBlock);

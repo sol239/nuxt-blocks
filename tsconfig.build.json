@@ -15,15 +15,6 @@
       "@/*": ["./app/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "app/core/**/*",
-    "app/composables/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "playground",
-    "tests"
-  ]
+  "include": ["src/**/*", "app/core/**/*", "app/composables/**/*"],
+  "exclude": ["node_modules", "dist", "playground", "tests"]
 }

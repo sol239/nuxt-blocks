@@ -1,11 +1,28 @@
 import { blockClasses } from './blockClasses';
 import { settingsClasses } from './settings';
-import { defaultInteractiveExperience, type InteractionKind } from './interactiveExperience';
+import {
+  defaultInteractiveExperience,
+  type InteractionKind,
+} from './interactiveExperience';
 
 export function blockGenerationInstructions(): string {
-  const settings = Object.fromEntries(Object.keys(blockClasses).map(type => [type, new settingsClasses[type as keyof typeof settingsClasses]() ]));
-  const interactions = Object.fromEntries((['calculator', 'bill-splitter', 'comparison', 'checklist', 'quiz'] as InteractionKind[])
-    .map(kind => [kind, defaultInteractiveExperience(kind)]));
+  const settings = Object.fromEntries(
+    Object.keys(blockClasses).map((type) => [
+      type,
+      new settingsClasses[type as keyof typeof settingsClasses](),
+    ]),
+  );
+  const interactions = Object.fromEntries(
+    (
+      [
+        'calculator',
+        'bill-splitter',
+        'comparison',
+        'checklist',
+        'quiz',
+      ] as InteractionKind[]
+    ).map((kind) => [kind, defaultInteractiveExperience(kind)]),
+  );
   return `Create notebook blocks for the user's request. You can create EVERY registered block type.
 Return one fenced rvn-block JSON object per block, with blank lines between fences. Do not wrap the whole response in another fence.
 Each object has {"blockType":"<registered type>","data":"<content>","blockSettings":{}}. Do not provide IDs or versions.

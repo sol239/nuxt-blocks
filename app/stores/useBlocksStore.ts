@@ -1,8 +1,8 @@
-import { defineStore } from "pinia";
-import { ref } from "vue";
-import { Block } from "~/core/blocks/Block";
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+import type { Block } from '~/core/blocks/Block';
 
-export const useBlocksStore = defineStore("blocks", () => {
+export const useBlocksStore = defineStore('blocks', () => {
   const blocks = ref<Block[]>([]);
 
   function addBlock(block: Block, index = blocks.value.length) {

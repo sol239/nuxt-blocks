@@ -59,17 +59,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from "vue";
-import type { Application, Graphics, Container } from "pixi.js";
-import type { Block } from "~/core/blocks/Block";
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import type { Application, Graphics, Container } from 'pixi.js';
+import type { Block } from '~/core/blocks/Block';
 import {
   normalizeDrawingData,
   type DrawingStroke,
   type DrawingPoint,
   type DrawingTool,
-} from "~/core/blocks/DrawingBlock";
+} from '~/core/blocks/DrawingBlock';
 import {
-  resamplePoints,
   smoothPoints,
   getDistance,
   buildStrokePath,
@@ -78,20 +77,20 @@ import {
   defaultSmoothingOptions,
   type DrawingSmoothingOptions,
   type TimedPoint,
-} from "~/core/blocks/drawingGeometry";
-import DrawingToolbar from "./DrawingToolbar.vue";
+} from '~/core/blocks/drawingGeometry';
+import DrawingToolbar from './DrawingToolbar.vue';
 
 const props = defineProps<{
   block: Block;
 }>();
 
 const emit = defineEmits<{
-  "update:block": [value: Block];
+  'update:block': [value: Block];
 }>();
 
 // Editor tool state (not stored in Block data)
-const activeTool = ref<DrawingTool>("pen");
-const penColor = ref("#111827");
+const activeTool = ref<DrawingTool>('pen');
+const penColor = ref('#111827');
 const penWidth = ref(4);
 const eraserWidth = ref(20);
 const smoothing = ref(0.5);
@@ -127,7 +126,7 @@ let PixiGraphics: typeof Graphics | null = null;
 async function loadPixi() {
   if (!PixiApplication) {
     try {
-      const pixi = await import("pixi.js");
+      const pixi = await import('pixi.js');
       PixiApplication = pixi.Application;
       PixiContainer = pixi.Container;
       PixiGraphics = pixi.Graphics;
@@ -163,9 +162,9 @@ function renderStrokeToGraphics(
   if (!points || points.length === 0) return;
 
   if (isEraser) {
-    g.blendMode = "erase";
+    g.blendMode = 'erase';
   } else {
-    g.blendMode = "normal";
+    g.blendMode = 'normal';
   }
 
   const effectiveWidth = Math.max(1, width);
@@ -185,8 +184,8 @@ function renderStrokeToGraphics(
     g.stroke({
       width: effectiveWidth,
       color: effectiveColor,
-      cap: "round",
-      join: "round",
+      cap: 'round',
+      join: 'round',
     });
   }
 }
@@ -199,9 +198,9 @@ function renderAllStrokes(container: Container, strokeList: DrawingStroke[]) {
     if (!stroke.points || stroke.points.length === 0) continue;
 
     const g = new PixiGraphics();
-    const isEraser = stroke.tool === "eraser";
+    const isEraser = stroke.tool === 'eraser';
     const width = stroke.width || (isEraser ? 20 : 4);
-    const color = stroke.color || "#111827";
+    const color = stroke.color || '#111827';
 
     renderStrokeToGraphics(g, stroke.points, width, color, isEraser);
     container.addChild(g);
@@ -233,7 +232,7 @@ function onPointerDown(event: PointerEvent) {
   if (event.button !== 0) return; // Primary pointer only
 
   const target = event.target as HTMLElement;
-  if (target?.closest("button") || target?.closest(".drawing-toolbar")) return;
+  if (target?.closest('button') || target?.closest('.drawing-toolbar')) return;
 
   containerRef.value?.setPointerCapture(event.pointerId);
   isDrawing = true;
@@ -243,7 +242,10 @@ function onPointerDown(event: PointerEvent) {
   strokeOptions = { ...smoothingOptions.value };
 
   // 2. Reset One Euro filter instance
-  oneEuroFilter = new OneEuroFilter(strokeOptions.minCutoff, strokeOptions.beta);
+  oneEuroFilter = new OneEuroFilter(
+    strokeOptions.minCutoff,
+    strokeOptions.beta,
+  );
 
   const point = getLocalCoordinates(event);
   const time = event.timeStamp || performance.now();
@@ -259,10 +261,16 @@ function onPointerDown(event: PointerEvent) {
   filteredPoints = [initialPoint];
 
   if (currentStrokeGraphics) {
-    const isEraser = activeTool.value === "eraser";
+    const isEraser = activeTool.value === 'eraser';
     const width = isEraser ? eraserWidth.value : penWidth.value;
-    const color = isEraser ? "#000000" : penColor.value;
-    renderStrokeToGraphics(currentStrokeGraphics, filteredPoints, width, color, isEraser);
+    const color = isEraser ? '#000000' : penColor.value;
+    renderStrokeToGraphics(
+      currentStrokeGraphics,
+      filteredPoints,
+      width,
+      color,
+      isEraser,
+    );
   }
 }
 
@@ -273,9 +281,11 @@ function onPointerMove(event: PointerEvent) {
   if (!isDrawing) return;
 
   // Pipeline stage 1: Coalesced events
-  const events = (strokeOptions.useCoalescedEvents && typeof event.getCoalescedEvents === "function")
-    ? event.getCoalescedEvents()
-    : [event];
+  const events =
+    strokeOptions.useCoalescedEvents &&
+    typeof event.getCoalescedEvents === 'function'
+      ? event.getCoalescedEvents()
+      : [event];
 
   for (const e of events) {
     const pt = getLocalCoordinates(e);
@@ -284,7 +294,10 @@ function onPointerMove(event: PointerEvent) {
     // Pipeline stage 2: Resampling
     if (strokeOptions.useResampling) {
       const lastRaw = rawPointsWithTime[rawPointsWithTime.length - 1];
-      if (lastRaw && getDistance(lastRaw, pt) < strokeOptions.minPointDistance) {
+      if (
+        lastRaw &&
+        getDistance(lastRaw, pt) < strokeOptions.minPointDistance
+      ) {
         continue; // Skip points too close to previous
       }
     }
@@ -308,7 +321,7 @@ function onPointerMove(event: PointerEvent) {
       if (!isDrawing || !currentStrokeGraphics) return;
 
       // Make a copy for live display
-      let displayPoints = [...filteredPoints];
+      const displayPoints = [...filteredPoints];
 
       // Pipeline stage 4: Point prediction (live display only)
       if (strokeOptions.usePrediction && rawPointsWithTime.length >= 2) {
@@ -316,17 +329,32 @@ function onPointerMove(event: PointerEvent) {
         const pPrev = rawPointsWithTime[n - 2]!;
         const pCurr = rawPointsWithTime[n - 1]!;
         const dtMs = Math.max(1, pCurr.time - pPrev.time);
-        const predicted = predictPoint(pPrev, pCurr, dtMs, strokeOptions.predictionMs);
+        const predicted = predictPoint(
+          pPrev,
+          pCurr,
+          dtMs,
+          strokeOptions.predictionMs,
+        );
         displayPoints.push(predicted);
       }
 
       // Pipeline stage 5: Curve interpolation
-      const renderPath = buildStrokePath(displayPoints, strokeOptions.useCurveInterpolation, smoothing.value);
+      const renderPath = buildStrokePath(
+        displayPoints,
+        strokeOptions.useCurveInterpolation,
+        smoothing.value,
+      );
 
-      const isEraser = activeTool.value === "eraser";
+      const isEraser = activeTool.value === 'eraser';
       const width = isEraser ? eraserWidth.value : penWidth.value;
-      const color = isEraser ? "#000000" : penColor.value;
-      renderStrokeToGraphics(currentStrokeGraphics, renderPath, width, color, isEraser);
+      const color = isEraser ? '#000000' : penColor.value;
+      renderStrokeToGraphics(
+        currentStrokeGraphics,
+        renderPath,
+        width,
+        color,
+        isEraser,
+      );
     });
   }
 }
@@ -364,7 +392,7 @@ function onPointerUp(event: PointerEvent) {
     committedPoints = buildStrokePath(committedPoints, true, smoothing.value);
   }
 
-  const isEraser = activeTool.value === "eraser";
+  const isEraser = activeTool.value === 'eraser';
   const newStroke: DrawingStroke = {
     tool: activeTool.value,
     points: committedPoints,
@@ -391,7 +419,7 @@ function onPointerUp(event: PointerEvent) {
 
   // Emit single immutable update:block
   const updatedData = JSON.stringify({ strokes: strokes.value });
-  emit("update:block", props.block.withData(updatedData));
+  emit('update:block', props.block.withData(updatedData));
 }
 
 function onPointerCancel(event: PointerEvent) {
@@ -399,7 +427,9 @@ function onPointerCancel(event: PointerEvent) {
   isDrawing = false;
   try {
     containerRef.value?.releasePointerCapture(event.pointerId);
-  } catch {}
+  } catch {
+    // Pointer capture may already have been released by the browser.
+  }
   if (currentStrokeGraphics) {
     currentStrokeGraphics.clear();
   }
@@ -415,7 +445,7 @@ function undoLastStroke() {
     renderAllStrokes(strokesContainer, strokes.value);
   }
   const updatedData = JSON.stringify({ strokes: strokes.value });
-  emit("update:block", props.block.withData(updatedData));
+  emit('update:block', props.block.withData(updatedData));
 }
 
 function clearDrawing() {
@@ -427,7 +457,7 @@ function clearDrawing() {
     currentStrokeGraphics.clear();
   }
   const updatedData = JSON.stringify({ strokes: [] });
-  emit("update:block", props.block.withData(updatedData));
+  emit('update:block', props.block.withData(updatedData));
 }
 
 // Watch for external data changes (undo/redo, document loading, turn-into)
@@ -463,7 +493,8 @@ onMounted(async () => {
     backgroundAlpha: 0, // Transparent canvas so eraser punches through transparently
     antialias: true,
     autoDensity: true,
-    resolution: typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
+    resolution:
+      typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
   });
 
   pixiApp = app;

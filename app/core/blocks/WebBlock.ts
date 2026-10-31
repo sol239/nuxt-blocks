@@ -5,14 +5,19 @@ export class WebBlock extends Block<WebBlockSettings> {
   readonly blockType = 'web' as const;
   blockSettings: WebBlockSettings;
 
-  constructor(id: string = crypto.randomUUID(), version = 1, data: string | null = '', settings?: Partial<WebBlockSettings> | null) {
+  constructor(
+    id: string = crypto.randomUUID(),
+    version = 1,
+    data: string | null = '',
+    settings?: Partial<WebBlockSettings> | null,
+  ) {
     super(id, version, data);
     this.blockSettings = Object.assign(new WebBlockSettings(), settings ?? {});
   }
 
   toMarkdown(): string {
     const runs = this.data?.match(/`+/g) ?? [];
-    const fence = '`'.repeat(Math.max(3, ...runs.map(run => run.length + 1)));
+    const fence = '`'.repeat(Math.max(3, ...runs.map((run) => run.length + 1)));
     return `${fence}web\n${this.data ?? ''}\n${fence}`;
   }
 

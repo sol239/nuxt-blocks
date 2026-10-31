@@ -1,30 +1,30 @@
 import { TodoBlock } from './TodoBlock';
-import { AntigravityBlock } from "./AntigravityBlock";
+import { AntigravityBlock } from './AntigravityBlock';
 import { TableBlock } from './TableBlock';
-import { OllamaBlock } from "./OllamaBlock";
-import { CodexBlock } from "./CodexBlock";
-import { NotebookBlock } from "./NotebookBlock";
+import { OllamaBlock } from './OllamaBlock';
+import { CodexBlock } from './CodexBlock';
+import { NotebookBlock } from './NotebookBlock';
 import { WebBlock } from './WebBlock';
 import { defaultWebSource } from './webPreview';
-import { InteractiveBlock } from "./InteractiveBlock";
-import { Block, type BlockType } from "./Block";
+import { InteractiveBlock } from './InteractiveBlock';
+import { Block, type BlockType } from './Block';
 
-import { MarkdownBlock } from "./MarkdownBlock";
-import { ParagraphBlock } from "./ParagraphBlock";
-import { Heading1Block } from "./Heading1Block";
-import { Heading2Block } from "./Heading2Block";
-import { Heading3Block } from "./Heading3Block";
-import { DividerBlock } from "./DividerBlock";
-import { BulletedListBlock } from "./BulletedListBlock";
-import { NumberedListBlock } from "./NumberedListBlock";
-import { QuoteBlock } from "./QuoteBlock";
-import { LinkBlock } from "./LinkBlock";
-import { ImageBlock } from "./ImageBlock";
-import { VideoBlock } from "./VideoBlock";
-import { AudioBlock } from "./AudioBlock";
-import { CodeBlock } from "./CodeBlock";
-import { MathBlock } from "./MathBlock";
-import { DrawingBlock } from "./DrawingBlock";
+import { MarkdownBlock } from './MarkdownBlock';
+import { ParagraphBlock } from './ParagraphBlock';
+import { Heading1Block } from './Heading1Block';
+import { Heading2Block } from './Heading2Block';
+import { Heading3Block } from './Heading3Block';
+import { DividerBlock } from './DividerBlock';
+import { BulletedListBlock } from './BulletedListBlock';
+import { NumberedListBlock } from './NumberedListBlock';
+import { QuoteBlock } from './QuoteBlock';
+import { LinkBlock } from './LinkBlock';
+import { ImageBlock } from './ImageBlock';
+import { VideoBlock } from './VideoBlock';
+import { AudioBlock } from './AudioBlock';
+import { CodeBlock } from './CodeBlock';
+import { MathBlock } from './MathBlock';
+import { DrawingBlock } from './DrawingBlock';
 
 export const blockClasses = {
   todo: TodoBlock,
@@ -57,7 +57,9 @@ export type BlockClassMap = typeof blockClasses;
 
 export function createBlock<T extends BlockType>(
   type: T,
-  id: string = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+  id: string = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2),
   version: number = 1,
   data: string | null = null,
   settings: object | null = null,
@@ -76,21 +78,31 @@ export function createBlock<T extends BlockType>(
 
 // Wire up deserializer on Block base class
 Block.setDeserializer((json) => {
-  return createBlock(json.blockType, json.id, json.version, json.data, json.blockSettings);
+  return createBlock(
+    json.blockType,
+    json.id,
+    json.version,
+    json.data,
+    json.blockSettings,
+  );
 });
 
 export function initialBlockData(type: BlockType): string {
-  return ({
-    todo: "### To do\n- [ ] ",
-    table: new TableBlock().data!,
-    web: defaultWebSource(),
-    interactive: new InteractiveBlock().data!,
-    divider: "---",
-    bulletedList: "- ",
-    numberedList: "1. ",
-    quote: "> ",
-    drawing: JSON.stringify({ strokes: [] }),
-  } as Partial<Record<BlockType, string>>)[type] ?? "";
+  return (
+    (
+      {
+        todo: '### To do\n- [ ] ',
+        table: new TableBlock().data!,
+        web: defaultWebSource(),
+        interactive: new InteractiveBlock().data!,
+        divider: '---',
+        bulletedList: '- ',
+        numberedList: '1. ',
+        quote: '> ',
+        drawing: JSON.stringify({ strokes: [] }),
+      } as Partial<Record<BlockType, string>>
+    )[type] ?? ''
+  );
 }
 
 export {

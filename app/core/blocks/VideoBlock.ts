@@ -1,10 +1,13 @@
-import { Block } from "./Block";
-import { VideoBlockSettings } from "./VideoBlockSettings";
+import { Block } from './Block';
+import { VideoBlockSettings } from './VideoBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class VideoBlock extends Block<VideoBlockSettings> {
-  readonly blockType = "video" as const;
+  readonly blockType = 'video' as const;
   blockSettings: VideoBlockSettings;
 
   constructor(
@@ -14,16 +17,19 @@ export class VideoBlock extends Block<VideoBlockSettings> {
     settings?: Partial<VideoBlockSettings> | null,
   ) {
     super(id, version, data);
-    this.blockSettings = Object.assign(new VideoBlockSettings(), settings ?? {});
+    this.blockSettings = Object.assign(
+      new VideoBlockSettings(),
+      settings ?? {},
+    );
   }
 
   toMarkdown(): string {
-    const data = this.data?.trim() ?? "";
-    if (!data) return "#### [video] unsupported";
+    const data = this.data?.trim() ?? '';
+    if (!data) return '#### [video] unsupported';
     if (this.blockSettings.isUrl || /^https?:\/\/|^\/|^\.\//.test(data)) {
       return `[Video](${data})`;
     }
-    return "#### [video] unsupported";
+    return '#### [video] unsupported';
   }
 
   fromMarkdown(markdown: string): this {
@@ -31,9 +37,9 @@ export class VideoBlock extends Block<VideoBlockSettings> {
     if (match && match[1]) {
       this.blockSettings.isUrl = true;
       this.data = match[1].trim();
-    } else if (markdown.startsWith("#### [video] unsupported")) {
-      this.data = "";
-    } else if (markdown.trim().startsWith("http")) {
+    } else if (markdown.startsWith('#### [video] unsupported')) {
+      this.data = '';
+    } else if (markdown.trim().startsWith('http')) {
       this.blockSettings.isUrl = true;
       this.data = markdown.trim();
     }
@@ -41,4 +47,4 @@ export class VideoBlock extends Block<VideoBlockSettings> {
   }
 }
 
-Block.registerSubclass("video", VideoBlock);
+Block.registerSubclass('video', VideoBlock);

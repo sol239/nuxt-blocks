@@ -137,7 +137,11 @@
               @keydown.up.prevent="openFontMenu"
             >
               <span>{{ currentFontFamily }}</span>
-              <Icon name="material-symbols:arrow-drop-down" class="size-4 text-gray-400" aria-hidden="true" />
+              <Icon
+                name="material-symbols:arrow-drop-down"
+                class="size-4 text-gray-400"
+                aria-hidden="true"
+              />
             </button>
             <div
               v-if="fontMenuOpen"
@@ -155,18 +159,27 @@
                 role="option"
                 :aria-selected="currentFontFamily === font"
                 class="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                :class="{ 'bg-blue-50 text-blue-700': currentFontFamily === font }"
+                :class="{
+                  'bg-blue-50 text-blue-700': currentFontFamily === font,
+                }"
                 :style="{ fontFamily: font }"
                 @click="onFontFamilyChange(font)"
               >
                 <span>{{ font }}</span>
-                <Icon v-if="currentFontFamily === font" name="material-symbols:check" class="size-4" aria-hidden="true" />
+                <Icon
+                  v-if="currentFontFamily === font"
+                  name="material-symbols:check"
+                  class="size-4"
+                  aria-hidden="true"
+                />
               </button>
             </div>
           </div>
 
           <!-- Font size input -->
-          <div class="flex items-center gap-0.5 rounded-lg px-1.5 py-1 hover:bg-gray-100">
+          <div
+            class="flex items-center gap-0.5 rounded-lg px-1.5 py-1 hover:bg-gray-100"
+          >
             <input
               type="number"
               min="8"
@@ -174,38 +187,70 @@
               aria-label="Font size"
               :value="currentFontSize"
               class="w-8 bg-transparent text-center text-xs font-medium text-gray-700 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              @input="onFontSizeInput(($event.target as HTMLInputElement).value)"
+              @input="
+                onFontSizeInput(($event.target as HTMLInputElement).value)
+              "
               @keydown.enter="onFontSizeEnter"
               @blur="onFontSizeBlur"
-            >
+            />
             <span class="text-[10px] text-gray-400 select-none">px</span>
           </div>
         </div>
       </div>
 
-      <div v-if="isHighlighted" class="flex items-center gap-2" role="group" aria-label="Highlight color">
-        <span class="text-xs font-medium text-gray-400 select-none">Highlight:</span>
+      <div
+        v-if="isHighlighted"
+        class="flex items-center gap-2"
+        role="group"
+        aria-label="Highlight color"
+      >
+        <span class="text-xs font-medium text-gray-400 select-none"
+          >Highlight:</span
+        >
         <button
-          v-for="color in highlightColors" :key="color.value"
+          v-for="color in highlightColors"
+          :key="color.value"
           type="button"
           :aria-label="`${color.label} highlight`"
           :title="`${color.label} highlight`"
           :aria-pressed="selectedHighlight === color.value"
           class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-blue-500"
-          :class="selectedHighlight === color.value ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
+          :class="
+            selectedHighlight === color.value
+              ? 'ring-2 ring-blue-500 ring-offset-2'
+              : ''
+          "
           :style="{ backgroundColor: color.value }"
           @mousedown.prevent
           @click="onHighlightColor(color.value)"
-        ><Icon v-if="selectedHighlight === color.value" name="material-symbols:check" class="size-4 text-gray-800" /></button>
-        <label class="relative flex size-7 cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300" title="Custom highlight color">
+        >
+          <Icon
+            v-if="selectedHighlight === color.value"
+            name="material-symbols:check"
+            class="size-4 text-gray-800"
+          />
+        </button>
+        <label
+          class="relative flex size-7 cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300"
+          title="Custom highlight color"
+        >
           <Icon name="material-symbols:colorize" class="size-4 text-gray-500" />
-          <input type="color" aria-label="Custom highlight color" :value="selectedHighlight" class="sr-only" @input="onHighlightColor(($event.target as HTMLInputElement).value)" @change="restoreBlockFocus">
+          <input
+            type="color"
+            aria-label="Custom highlight color"
+            :value="selectedHighlight"
+            class="sr-only"
+            @input="onHighlightColor(($event.target as HTMLInputElement).value)"
+            @change="restoreBlockFocus"
+          />
         </label>
       </div>
 
       <!-- Right: Color selector (centered right) -->
       <div class="flex items-center gap-2">
-        <span class="text-xs font-medium text-gray-400 select-none">Color:</span>
+        <span class="text-xs font-medium text-gray-400 select-none"
+          >Color:</span
+        >
         <div class="flex items-center gap-1.5">
           <!-- Preset 1: Black -->
           <button
@@ -213,12 +258,20 @@
             aria-label="Black"
             title="Black"
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
-            :class="selectedColor.toLowerCase() === '#000000' ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
+            :class="
+              selectedColor.toLowerCase() === '#000000'
+                ? 'ring-2 ring-blue-500 ring-offset-2'
+                : ''
+            "
             style="background-color: #000000"
             @mousedown.prevent
             @click="onColorSelect('#000000')"
           >
-            <Icon v-if="selectedColor.toLowerCase() === '#000000'" name="material-symbols:check" class="size-4 text-white" />
+            <Icon
+              v-if="selectedColor.toLowerCase() === '#000000'"
+              name="material-symbols:check"
+              class="size-4 text-white"
+            />
           </button>
 
           <!-- Preset 2: Blue -->
@@ -227,12 +280,20 @@
             aria-label="Blue"
             title="Blue"
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
-            :class="selectedColor.toLowerCase() === '#2563eb' ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
+            :class="
+              selectedColor.toLowerCase() === '#2563eb'
+                ? 'ring-2 ring-blue-500 ring-offset-2'
+                : ''
+            "
             style="background-color: #2563eb"
             @mousedown.prevent
             @click="onColorSelect('#2563eb')"
           >
-            <Icon v-if="selectedColor.toLowerCase() === '#2563eb'" name="material-symbols:check" class="size-4 text-white" />
+            <Icon
+              v-if="selectedColor.toLowerCase() === '#2563eb'"
+              name="material-symbols:check"
+              class="size-4 text-white"
+            />
           </button>
 
           <!-- Preset 3: Red -->
@@ -241,12 +302,20 @@
             aria-label="Red"
             title="Red"
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
-            :class="selectedColor.toLowerCase() === '#dc2626' ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
+            :class="
+              selectedColor.toLowerCase() === '#dc2626'
+                ? 'ring-2 ring-blue-500 ring-offset-2'
+                : ''
+            "
             style="background-color: #dc2626"
             @mousedown.prevent
             @click="onColorSelect('#dc2626')"
           >
-            <Icon v-if="selectedColor.toLowerCase() === '#dc2626'" name="material-symbols:check" class="size-4 text-white" />
+            <Icon
+              v-if="selectedColor.toLowerCase() === '#dc2626'"
+              name="material-symbols:check"
+              class="size-4 text-white"
+            />
           </button>
 
           <!-- Preset 4: Green -->
@@ -255,12 +324,20 @@
             aria-label="Green"
             title="Green"
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
-            :class="selectedColor.toLowerCase() === '#16a34a' ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
+            :class="
+              selectedColor.toLowerCase() === '#16a34a'
+                ? 'ring-2 ring-blue-500 ring-offset-2'
+                : ''
+            "
             style="background-color: #16a34a"
             @mousedown.prevent
             @click="onColorSelect('#16a34a')"
           >
-            <Icon v-if="selectedColor.toLowerCase() === '#16a34a'" name="material-symbols:check" class="size-4 text-white" />
+            <Icon
+              v-if="selectedColor.toLowerCase() === '#16a34a'"
+              name="material-symbols:check"
+              class="size-4 text-white"
+            />
           </button>
 
           <!-- Preset 5: Custom color picked -->
@@ -269,7 +346,9 @@
             :aria-label="`Custom color: ${customColor}`"
             :title="`Custom color: ${customColor}`"
             class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus:outline-none"
-            :class="isCustomColorSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
+            :class="
+              isCustomColorSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''
+            "
             :style="{ backgroundColor: customColor }"
             @mousedown.prevent
             @click="onColorSelect(customColor)"
@@ -278,7 +357,9 @@
               v-if="isCustomColorSelected"
               name="material-symbols:check"
               class="size-4"
-              :class="isLightColor(customColor) ? 'text-gray-900' : 'text-white'"
+              :class="
+                isLightColor(customColor) ? 'text-gray-900' : 'text-white'
+              "
             />
           </button>
 
@@ -293,9 +374,11 @@
               type="color"
               :value="customColor"
               class="sr-only"
-              @input="onCustomColorInput(($event.target as HTMLInputElement).value)"
+              @input="
+                onCustomColorInput(($event.target as HTMLInputElement).value)
+              "
               @change="onCustomColorChange"
-            >
+            />
           </label>
         </div>
       </div>
@@ -304,12 +387,16 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick } from "vue";
-import { storeToRefs } from "pinia";
-import { useTypingStore, type TypingFormat } from "~/stores/useTypingStore";
-import type { Block } from "~/core/blocks/Block";
-import { applyStyleToRange, applyColorToRange, applyHighlightToRange } from "~/core/blocks/textSpans";
-import { useBlocksConfig } from "~/composables/useBlocksConfig";
+import { nextTick } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useTypingStore, type TypingFormat } from '~/stores/useTypingStore';
+import type { Block } from '~/core/blocks/Block';
+import {
+  applyStyleToRange,
+  applyColorToRange,
+  applyHighlightToRange,
+} from '~/core/blocks/textSpans';
+import { useBlocksConfig } from '~/composables/useBlocksConfig';
 
 const toolbarElement = ref<HTMLElement | null>(null);
 const toolbarPosition = ref<Record<string, string>>({});
@@ -325,15 +412,19 @@ function alignToolbar() {
   };
 }
 
-watch(toolbarElement, (element) => {
-  editorObserver?.disconnect();
-  if (!element?.parentElement) return;
-  alignToolbar();
-  editorObserver = new ResizeObserver(alignToolbar);
-  editorObserver.observe(element.parentElement);
-  const shell = element.closest('main');
-  if (shell) editorObserver.observe(shell);
-}, { flush: 'post' });
+watch(
+  toolbarElement,
+  (element) => {
+    editorObserver?.disconnect();
+    if (!element?.parentElement) return;
+    alignToolbar();
+    editorObserver = new ResizeObserver(alignToolbar);
+    editorObserver.observe(element.parentElement);
+    const shell = element.closest('main');
+    if (shell) editorObserver.observe(shell);
+  },
+  { flush: 'post' },
+);
 
 const config = useBlocksConfig();
 
@@ -348,15 +439,17 @@ const props = withDefaults(
   },
 );
 
-const selectedColor = defineModel<string>("selectedColor", { default: "#000000" });
+const selectedColor = defineModel<string>('selectedColor', {
+  default: '#000000',
+});
 
 const emit = defineEmits<{
-  "update:settings": [settings: { fontFamily?: string; fontSize?: number }];
-  "update:block": [value: Block];
+  'update:settings': [settings: { fontFamily?: string; fontSize?: number }];
+  'update:block': [value: Block];
 }>();
 
-const customColor = ref("#9333ea");
-const standardColors = new Set(["#000000", "#2563eb", "#dc2626", "#16a34a"]);
+const customColor = ref('#9333ea');
+const standardColors = new Set(['#000000', '#2563eb', '#dc2626', '#16a34a']);
 
 const isCustomColorSelected = computed(() => {
   return (
@@ -366,7 +459,7 @@ const isCustomColorSelected = computed(() => {
 });
 
 function isLightColor(hexColor: string): boolean {
-  const hex = hexColor.replace("#", "");
+  const hex = hexColor.replace('#', '');
   if (hex.length === 6) {
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
@@ -390,27 +483,38 @@ const {
 } = storeToRefs(typingStore);
 
 const highlightColors = [
-  { label: "Pastel yellow", value: "#fef08a" },
-  { label: "Pastel pink", value: "#fbcfe8" },
-  { label: "Pastel mint", value: "#bbf7d0" },
-  { label: "Pastel blue", value: "#bfdbfe" },
-  { label: "Pastel lavender", value: "#e9d5ff" },
+  { label: 'Pastel yellow', value: '#fef08a' },
+  { label: 'Pastel pink', value: '#fbcfe8' },
+  { label: 'Pastel mint', value: '#bbf7d0' },
+  { label: 'Pastel blue', value: '#bfdbfe' },
+  { label: 'Pastel lavender', value: '#e9d5ff' },
 ];
 
 function applyHighlight(color?: string) {
   const range = typingStore.selectionRange;
   if (props.block && range && range.start < range.end) {
-    emit("update:block", props.block.withSettings({
-      ...props.block.blockSettings,
-      styles: applyHighlightToRange(props.block.blockSettings?.styles ?? [], (props.block.data ?? "").length, range.start, range.end, color),
-    }));
+    emit(
+      'update:block',
+      props.block.withSettings({
+        ...props.block.blockSettings,
+        styles: applyHighlightToRange(
+          props.block.blockSettings?.styles ?? [],
+          (props.block.data ?? '').length,
+          range.start,
+          range.end,
+          color,
+        ),
+      }),
+    );
   }
   restoreBlockFocus();
   nextTick(restoreBlockFocus);
 }
 function onHighlightToggle() {
   typingStore.isHighlighted = !typingStore.isHighlighted;
-  applyHighlight(typingStore.isHighlighted ? typingStore.selectedHighlight : undefined);
+  applyHighlight(
+    typingStore.isHighlighted ? typingStore.selectedHighlight : undefined,
+  );
 }
 function onHighlightColor(color: string) {
   typingStore.selectedHighlight = color;
@@ -421,7 +525,7 @@ function onHighlightColor(color: string) {
 function onToolbarMouseDown(event: MouseEvent) {
   // Prevent focus stealing for anything other than selects and inputs
   const target = event.target as HTMLElement | null;
-  if (!target?.closest("select, input")) {
+  if (!target?.closest('select, input')) {
     event.preventDefault();
   }
 }
@@ -430,9 +534,14 @@ function restoreBlockFocus() {
   const blockId = props.block?.id ?? typingStore.activeBlockId;
   if (!blockId) return;
 
-  const wrapper = document.querySelector<HTMLElement>(`[data-block-id="${blockId}"]`);
-  const textarea = wrapper?.querySelector<HTMLTextAreaElement>("textarea") ??
-    document.querySelector<HTMLTextAreaElement>(`[data-block-id="${blockId}"] textarea`);
+  const wrapper = document.querySelector<HTMLElement>(
+    `[data-block-id="${blockId}"]`,
+  );
+  const textarea =
+    wrapper?.querySelector<HTMLTextAreaElement>('textarea') ??
+    document.querySelector<HTMLTextAreaElement>(
+      `[data-block-id="${blockId}"] textarea`,
+    );
 
   if (textarea) {
     textarea.focus();
@@ -448,7 +557,7 @@ function restoreBlockFocus() {
 }
 
 function onFormatClick(format: TypingFormat) {
-  if (format === "math" && !config.mathAllowed) {
+  if (format === 'math' && !config.mathAllowed) {
     return;
   }
 
@@ -457,7 +566,7 @@ function onFormatClick(format: TypingFormat) {
     typingStore.selectionRange &&
     typingStore.selectionRange.start < typingStore.selectionRange.end
   ) {
-    const text = props.block.data ?? "";
+    const text = props.block.data ?? '';
     const { start, end } = typingStore.selectionRange;
     const updatedStyles = applyStyleToRange(
       props.block.blockSettings?.styles ?? [],
@@ -470,7 +579,7 @@ function onFormatClick(format: TypingFormat) {
       ...props.block.blockSettings,
       styles: updatedStyles,
     });
-    emit("update:block", updated);
+    emit('update:block', updated);
     typingStore.syncFromSpans(
       updatedStyles,
       props.block.blockSettings?.colors ?? [],
@@ -496,7 +605,7 @@ function onColorSelect(color: string) {
     typingStore.selectionRange &&
     typingStore.selectionRange.start < typingStore.selectionRange.end
   ) {
-    const text = props.block.data ?? "";
+    const text = props.block.data ?? '';
     const { start, end } = typingStore.selectionRange;
     const updatedColors = applyColorToRange(
       props.block.blockSettings?.colors ?? [],
@@ -509,7 +618,7 @@ function onColorSelect(color: string) {
       ...props.block.blockSettings,
       colors: updatedColors,
     });
-    emit("update:block", updated);
+    emit('update:block', updated);
   }
 
   restoreBlockFocus();
@@ -528,17 +637,19 @@ function onCustomColorChange() {
 }
 
 const fontFamilies = [
-  "Inter",
-  "Arial",
-  "Helvetica",
-  "Times New Roman",
-  "Georgia",
-  "Garamond",
-  "Courier New",
-  "Verdana",
-  "Trebuchet MS",
+  'Inter',
+  'Arial',
+  'Helvetica',
+  'Times New Roman',
+  'Georgia',
+  'Garamond',
+  'Courier New',
+  'Verdana',
+  'Trebuchet MS',
 ];
-const currentFontFamily = computed(() => props.block?.blockSettings?.fontFamily ?? "Inter");
+const currentFontFamily = computed(
+  () => props.block?.blockSettings?.fontFamily ?? 'Inter',
+);
 const fontPicker = ref<HTMLElement>();
 const fontMenu = ref<HTMLElement>();
 const fontMenuOpen = ref(false);
@@ -548,13 +659,17 @@ function openFontMenu() {
   fontMenuOpen.value = true;
   nextTick(() => {
     const index = Math.max(0, fontFamilies.indexOf(currentFontFamily.value));
-    fontMenu.value?.querySelectorAll<HTMLButtonElement>('[role="option"]')[index]?.focus();
+    fontMenu.value
+      ?.querySelectorAll<HTMLButtonElement>('[role="option"]')
+      [index]?.focus();
   });
 }
 
 function closeFontMenu() {
   fontMenuOpen.value = false;
-  fontPicker.value?.querySelector<HTMLButtonElement>('[aria-haspopup="listbox"]')?.focus();
+  fontPicker.value
+    ?.querySelector<HTMLButtonElement>('[aria-haspopup="listbox"]')
+    ?.focus();
 }
 
 function toggleFontMenu() {
@@ -563,28 +678,38 @@ function toggleFontMenu() {
 }
 
 function onFontMenuKeydown(event: KeyboardEvent) {
-  const options = [...(fontMenu.value?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? [])];
+  const options = [
+    ...(fontMenu.value?.querySelectorAll<HTMLButtonElement>(
+      '[role="option"]',
+    ) ?? []),
+  ];
   const index = options.indexOf(document.activeElement as HTMLButtonElement);
-  if (event.key === "Escape") {
+  if (event.key === 'Escape') {
     event.preventDefault();
     closeFontMenu();
-  } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+  } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
     event.preventDefault();
-    const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1
-      : (index + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length;
+    const next =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? options.length - 1
+          : (index + (event.key === 'ArrowDown' ? 1 : -1) + options.length) %
+            options.length;
     options[next]?.focus();
   }
 }
 
 function onFontPointerDown(event: PointerEvent) {
-  if (fontMenuOpen.value && !fontPicker.value?.contains(event.target as Node)) fontMenuOpen.value = false;
+  if (fontMenuOpen.value && !fontPicker.value?.contains(event.target as Node))
+    fontMenuOpen.value = false;
 }
 
 const defaultFontSize = computed(() => {
   const type = props.block?.blockType;
-  if (type === "heading1") return 36;
-  if (type === "heading2") return 28;
-  if (type === "heading3") return 22;
+  if (type === 'heading1') return 36;
+  if (type === 'heading2') return 28;
+  if (type === 'heading3') return 22;
   return 16;
 });
 
@@ -594,7 +719,7 @@ const currentFontSize = computed(() => {
 
 function onFontFamilyChange(fontFamily: string) {
   fontMenuOpen.value = false;
-  emit("update:settings", { fontFamily });
+  emit('update:settings', { fontFamily });
   restoreBlockFocus();
   nextTick(() => {
     restoreBlockFocus();
@@ -604,7 +729,7 @@ function onFontFamilyChange(fontFamily: string) {
 function onFontSizeInput(val: string) {
   const size = Number(val);
   if (!isNaN(size) && size > 0 && size <= 200) {
-    emit("update:settings", { fontSize: size });
+    emit('update:settings', { fontSize: size });
   }
 }
 
@@ -625,25 +750,26 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
     return;
   }
   if (event.repeat) {
-    if (["b", "i", "u", "x", "e", "m"].includes(event.key.toLowerCase())) event.preventDefault();
+    if (['b', 'i', 'u', 'x', 'e', 'm'].includes(event.key.toLowerCase()))
+      event.preventDefault();
     return;
   }
 
   const key = event.key.toLowerCase();
 
-  if (key === "b" && !event.shiftKey) {
-    onFormatClick("bold");
-  } else if (key === "i" && !event.shiftKey) {
-    onFormatClick("italic");
-  } else if (key === "u" && !event.shiftKey) {
-    onFormatClick("underline");
-  } else if (key === "x" && event.shiftKey) {
-    onFormatClick("strikethrough");
-  } else if (key === "e" && !event.shiftKey) {
-    onFormatClick("code");
-  } else if (key === "m" && !event.shiftKey) {
+  if (key === 'b' && !event.shiftKey) {
+    onFormatClick('bold');
+  } else if (key === 'i' && !event.shiftKey) {
+    onFormatClick('italic');
+  } else if (key === 'u' && !event.shiftKey) {
+    onFormatClick('underline');
+  } else if (key === 'x' && event.shiftKey) {
+    onFormatClick('strikethrough');
+  } else if (key === 'e' && !event.shiftKey) {
+    onFormatClick('code');
+  } else if (key === 'm' && !event.shiftKey) {
     if (!config.mathAllowed) return;
-    onFormatClick("math");
+    onFormatClick('math');
   } else {
     return;
   }
@@ -652,17 +778,17 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
 }
 
 onMounted(() => {
-  window.addEventListener("resize", alignToolbar);
-  window.addEventListener("scroll", alignToolbar, true);
-  document.addEventListener("keydown", handleKeyboardShortcut);
-  document.addEventListener("pointerdown", onFontPointerDown);
+  window.addEventListener('resize', alignToolbar);
+  window.addEventListener('scroll', alignToolbar, true);
+  document.addEventListener('keydown', handleKeyboardShortcut);
+  document.addEventListener('pointerdown', onFontPointerDown);
 });
 onUnmounted(() => {
   editorObserver?.disconnect();
-  window.removeEventListener("resize", alignToolbar);
-  window.removeEventListener("scroll", alignToolbar, true);
-  document.removeEventListener("keydown", handleKeyboardShortcut);
-  document.removeEventListener("pointerdown", onFontPointerDown);
+  window.removeEventListener('resize', alignToolbar);
+  window.removeEventListener('scroll', alignToolbar, true);
+  document.removeEventListener('keydown', handleKeyboardShortcut);
+  document.removeEventListener('pointerdown', onFontPointerDown);
 });
 </script>
 

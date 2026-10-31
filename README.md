@@ -13,6 +13,7 @@ npx github:sol239/blocks init
 ```
 
 The interactive CLI will prompt you with checkboxes:
+
 - **Monaco Code Editor**: Installs `monaco-editor` and `@monaco-editor/loader`
 - **LaTeX Math Rendering**: Installs `katex`
 - **Drawing Canvas**: Installs `pixi.js`
@@ -44,16 +45,20 @@ And add it to your `nuxt.config.ts`:
 ```typescript
 export default defineNuxtConfig({
   modules: [
-    ['nuxt-blocks', {
-      code: false,    // Default: false. Enables Monaco code editor blocks
-      math: false,    // Default: false. Enables KaTeX math blocks and inline math in toolbar
-      drawing: false, // Default: false. Enables Pixi.js drawing blocks
-    }]
-  ]
-})
+    [
+      'nuxt-blocks',
+      {
+        code: false, // Default: false. Enables Monaco code editor blocks
+        math: false, // Default: false. Enables KaTeX math blocks and inline math in toolbar
+        drawing: false, // Default: false. Enables Pixi.js drawing blocks
+      },
+    ],
+  ],
+});
 ```
 
 When optional capabilities are disabled (`false` by default):
+
 - Block types (`code`, `math`, `drawing`) are excluded from the wrapper's "Turn into" menu.
 - Inline math is hidden from the text formatting toolbar, and math shortcuts are disabled.
 - Heavy dependencies (`monaco-editor`, `katex`, `pixi.js`) are neither required nor bundled.
@@ -90,18 +95,22 @@ When optional capabilities are disabled (`false` by default):
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref } from 'vue';
 import {
   ParagraphBlock,
   Heading1Block,
   Heading2Block,
   type Block,
   type BlockType,
-} from "nuxt-blocks";
+} from 'nuxt-blocks';
 
 const blocks = ref<Block[]>([
-  new Heading1Block("b1", 1, "Welcome to My Page"),
-  new ParagraphBlock("b2", 1, "Start typing your notes here with full markdown and rich-text spans support..."),
+  new Heading1Block('b1', 1, 'Welcome to My Page'),
+  new ParagraphBlock(
+    'b2',
+    1,
+    'Start typing your notes here with full markdown and rich-text spans support...',
+  ),
 ]);
 
 const focusedBlock = ref<Block | null>(null);
@@ -133,23 +142,23 @@ You can render them standalone or wrap them inside `<BlockWrapper>` to include t
 
 #### Available Distinct Block Components
 
-| Component | Class | Stored Data |
-|---|---|---|
-| `<ParagraphBlock>` | `ParagraphBlock` | Plain text with rich style/color spans |
-| `<Heading1Block>` | `Heading1Block` | Heading 1 text |
-| `<Heading2Block>` | `Heading2Block` | Heading 2 text |
-| `<Heading3Block>` | `Heading3Block` | Heading 3 text |
-| `<CodeBlock>` | `CodeBlock` | Code string (requires `code: true`) |
-| `<MathBlock>` | `MathBlock` | LaTeX formula string (requires `math: true`) |
-| `<DrawingBlock>` | `DrawingBlock` | Pixi stroke data (requires `drawing: true`) |
-| `<BulletedListBlock>` | `BulletedListBlock` | Markdown `- ` lines |
-| `<NumberedListBlock>` | `NumberedListBlock` | Markdown `1. ` lines |
-| `<QuoteBlock>` | `QuoteBlock` | Markdown `> ` lines |
-| `<DividerBlock>` | `DividerBlock` | Fixed `---` horizontal rule |
-| `<LinkBlock>` | `LinkBlock` | Clickable link URL |
-| `<ImageBlock>` | `ImageBlock` | Image URL / base64 |
-| `<VideoBlock>` | `VideoBlock` | Video URL / base64 |
-| `<AudioBlock>` | `AudioBlock` | Audio URL / base64 |
+| Component             | Class               | Stored Data                                  |
+| --------------------- | ------------------- | -------------------------------------------- |
+| `<ParagraphBlock>`    | `ParagraphBlock`    | Plain text with rich style/color spans       |
+| `<Heading1Block>`     | `Heading1Block`     | Heading 1 text                               |
+| `<Heading2Block>`     | `Heading2Block`     | Heading 2 text                               |
+| `<Heading3Block>`     | `Heading3Block`     | Heading 3 text                               |
+| `<CodeBlock>`         | `CodeBlock`         | Code string (requires `code: true`)          |
+| `<MathBlock>`         | `MathBlock`         | LaTeX formula string (requires `math: true`) |
+| `<DrawingBlock>`      | `DrawingBlock`      | Pixi stroke data (requires `drawing: true`)  |
+| `<BulletedListBlock>` | `BulletedListBlock` | Markdown `- ` lines                          |
+| `<NumberedListBlock>` | `NumberedListBlock` | Markdown `1. ` lines                         |
+| `<QuoteBlock>`        | `QuoteBlock`        | Markdown `> ` lines                          |
+| `<DividerBlock>`      | `DividerBlock`      | Fixed `---` horizontal rule                  |
+| `<LinkBlock>`         | `LinkBlock`         | Clickable link URL                           |
+| `<ImageBlock>`        | `ImageBlock`        | Image URL / base64                           |
+| `<VideoBlock>`        | `VideoBlock`        | Video URL / base64                           |
+| `<AudioBlock>`        | `AudioBlock`        | Audio URL / base64                           |
 
 #### Example: Standalone Embedding with & without `BlockWrapper`
 
@@ -157,47 +166,37 @@ You can render them standalone or wrap them inside `<BlockWrapper>` to include t
 <template>
   <div class="space-y-6 max-w-2xl mx-auto p-4">
     <!-- 1. Standalone Heading Block -->
-    <Heading1Block
-      :block="heading"
-      @update:block="heading = $event"
-    />
+    <Heading1Block :block="heading" @update:block="heading = $event" />
 
     <!-- 2. Standalone Paragraph wrapped in BlockWrapper for actions & alignment -->
-    <BlockWrapper
-      :block="paragraph"
-      @update:block="paragraph = $event"
-    >
-      <ParagraphBlock
-        :block="paragraph"
-        @update:block="paragraph = $event"
-      />
+    <BlockWrapper :block="paragraph" @update:block="paragraph = $event">
+      <ParagraphBlock :block="paragraph" @update:block="paragraph = $event" />
     </BlockWrapper>
 
     <!-- 3. Standalone Code Editor block -->
-    <CodeBlock
-      :block="code"
-      @update:block="code = $event"
-    />
+    <CodeBlock :block="code" @update:block="code = $event" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref } from 'vue';
 import {
   Heading1Block,
   ParagraphBlock,
   CodeBlock,
   CodeBlockSettings,
-} from "nuxt-blocks";
+} from 'nuxt-blocks';
 
-const heading = ref(new Heading1Block("title", 1, "Section Title"));
-const paragraph = ref(new ParagraphBlock("para", 1, "Editable single paragraph component."));
+const heading = ref(new Heading1Block('title', 1, 'Section Title'));
+const paragraph = ref(
+  new ParagraphBlock('para', 1, 'Editable single paragraph component.'),
+);
 const code = ref(
   new CodeBlock(
-    "code",
+    'code',
     1,
     'console.log("Embedded code block");',
-    new CodeBlockSettings({ language: "typescript" }),
+    new CodeBlockSettings({ language: 'typescript' }),
   ),
 );
 </script>
@@ -453,7 +452,9 @@ are stored by Blocks.
 ```ts
 import { WebBlock } from 'nuxt-blocks';
 
-const block = new WebBlock('my-widget', 1,
+const block = new WebBlock(
+  'my-widget',
+  1,
   '<style>button{color:blue}</style><button onclick="this.textContent=\'Clicked!\'">Try me</button>',
   { height: 420 },
 );
@@ -471,3 +472,21 @@ Markdown export uses a `web` code fence, and importing that fence restores a Web
 block even if Monaco code blocks are disabled. Ordinary `html` code fences remain
 code blocks. `WebBlock` and `WebBlockSettings` are available from the library API;
 the Web block does not require Monaco or another optional dependency.
+
+## Development checks
+
+Use Node.js 22. Run `npm ci` in this repository (or in the frontend's
+`app/packages/nuxt-blocks` submodule). Installation prepares Nuxt and installs
+the repository-local pre-push hook. The hook applies only to this repository.
+
+- `npm run check`: ESLint, Prettier, type checking, and unit tests.
+- `npm run lint:fix`: apply automatic lint fixes.
+- `npm run format`: format source and configuration.
+- `npm run test:unit`: run block persistence and table validation tests.
+- `npm run build && npm run build:app && npm run test:e2e`: run the existing browser tests
+  after `npx playwright install chromium`.
+
+Pre-push and the GitHub Actions quality job both run `npm run check`.
+GitHub Actions also builds the demo and runs browser tests in a separate job.
+The demo build may need `NODE_OPTIONS=--max-old-space-size=4096`, as configured
+in CI. No frontend or server checks are included.

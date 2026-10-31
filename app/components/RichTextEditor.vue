@@ -4,7 +4,13 @@
     <div
       aria-hidden="true"
       class="rich-text-backdrop pointer-events-none absolute inset-0 overflow-hidden select-none whitespace-pre-wrap break-words"
-      style="text-align: inherit; font-family: inherit; font-size: inherit; line-height: inherit; letter-spacing: inherit"
+      style="
+        text-align: inherit;
+        font-family: inherit;
+        font-size: inherit;
+        line-height: inherit;
+        letter-spacing: inherit;
+      "
     >
       <FormattedSpans :spans="renderSpans" />
     </div>
@@ -16,9 +22,19 @@
       :aria-label="ariaLabel"
       :placeholder="placeholder"
       :rows="rows ?? 1"
-      style="text-align: inherit; font-family: inherit; font-size: inherit; line-height: inherit; letter-spacing: inherit"
+      style="
+        text-align: inherit;
+        font-family: inherit;
+        font-size: inherit;
+        line-height: inherit;
+        letter-spacing: inherit;
+      "
       class="field-sizing-content relative block w-full resize-none overflow-hidden bg-transparent focus:outline-none whitespace-pre-wrap break-words placeholder:text-gray-400"
-      :class="hasFormatting ? 'text-transparent caret-gray-900 selection:bg-blue-500/30' : 'text-inherit'"
+      :class="
+        hasFormatting
+          ? 'text-transparent caret-gray-900 selection:bg-blue-500/30'
+          : 'text-inherit'
+      "
       @input="onInput"
       @keydown="onKeydown"
       @select="onSelection"
@@ -31,18 +47,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import type { Block } from "~/core/blocks/Block";
+import { ref, computed } from 'vue';
+import type { Block } from '~/core/blocks/Block';
 import {
   buildRenderSpans,
   reconcileSpansOnTextChange,
   type RenderSpan,
   type StyleSpan,
   type ColorSpan,
-} from "~/core/blocks/textSpans";
-import { useTypingStore } from "~/stores/useTypingStore";
+} from '~/core/blocks/textSpans';
+import { useTypingStore } from '~/stores/useTypingStore';
 import { inlineMarkdownSpans } from '../core/blocks/inlineMarkdownSpans';
-import FormattedSpans from "./FormattedSpans.vue";
+import FormattedSpans from './FormattedSpans.vue';
 import { usePageFragment } from '../composables/usePageFragment';
 const pageFragment = usePageFragment();
 
@@ -56,45 +72,57 @@ const props = withDefaults(
     rows?: number;
   }>(),
   {
-    placeholder: "Start writing…",
-    ariaLabel: "Text",
+    placeholder: 'Start writing…',
+    ariaLabel: 'Text',
     rows: 1,
   },
 );
 
 const emit = defineEmits<{
-  "update:block": [value: Block];
-  "keydown": [event: KeyboardEvent];
+  'update:block': [value: Block];
+  keydown: [event: KeyboardEvent];
 }>();
 
 function onKeydown(event: KeyboardEvent) {
-  emit("keydown", event);
+  emit('keydown', event);
 }
 
 const textareaRef = ref<HTMLTextAreaElement>();
 const typingStore = useTypingStore();
 
-const styleSpans = computed<StyleSpan[]>(() => props.block.blockSettings?.styles ?? []);
-const colorSpans = computed<ColorSpan[]>(() => props.block.blockSettings?.colors ?? []);
+const styleSpans = computed<StyleSpan[]>(
+  () => props.block.blockSettings?.styles ?? [],
+);
+const colorSpans = computed<ColorSpan[]>(
+  () => props.block.blockSettings?.colors ?? [],
+);
 
 const renderSpans = computed<RenderSpan[]>(() => {
-  const text = props.block.data ?? "";
+  const text = props.block.data ?? '';
   if (!text) return [];
-  return inlineMarkdownSpans(buildRenderSpans(text, styleSpans.value, colorSpans.value));
+  return inlineMarkdownSpans(
+    buildRenderSpans(text, styleSpans.value, colorSpans.value),
+  );
 });
 
 const hasFormatting = computed(() => {
   const styles = styleSpans.value;
   const colors = colorSpans.value;
-  const hasNonNormalStyle = styles.some(s => s.style && s.style !== "normal");
+  const hasNonNormalStyle = styles.some((s) => s.style && s.style !== 'normal');
   const hasColor = colors.length > 0;
-  return hasNonNormalStyle || hasColor || renderSpans.value.map(span => span.text).join('') !== (props.block.data ?? '') || renderSpans.value.some(span => span.styles.length > 0);
+  return (
+    hasNonNormalStyle ||
+    hasColor ||
+    renderSpans.value.map((span) => span.text).join('') !==
+      (props.block.data ?? '') ||
+    renderSpans.value.some((span) => span.styles.length > 0)
+  );
 });
 
 function onInput(event: Event) {
   const target = event.currentTarget as HTMLTextAreaElement;
   const newText = target.value;
-  const oldText = props.block.data ?? "";
+  const oldText = props.block.data ?? '';
 
   const reconciled = reconcileSpansOnTextChange(
     oldText,
@@ -105,18 +133,20 @@ function onInput(event: Event) {
     typingStore.selectedColor,
   );
 
-  const updatedBlock = props.block
-    .withData(newText)
-    .withSettings({
-      ...props.block.blockSettings,
-      styles: reconciled.styles,
-      colors: reconciled.colors,
-    });
+  const updatedBlock = props.block.withData(newText).withSettings({
+    ...props.block.blockSettings,
+    styles: reconciled.styles,
+    colors: reconciled.colors,
+  });
 
-  emit("update:block", updatedBlock);
+  emit('update:block', updatedBlock);
   // Typing advances the caret while preserving the user's chosen formatting.
   const offset = pageFragment?.start.value ?? 0;
-  typingStore.setSelection(props.block.id, offset + target.selectionStart, offset + target.selectionEnd);
+  typingStore.setSelection(
+    props.block.id,
+    offset + target.selectionStart,
+    offset + target.selectionEnd,
+  );
 }
 
 function onSelection() {
@@ -124,7 +154,8 @@ function onSelection() {
   const start = textareaRef.value.selectionStart;
   const end = textareaRef.value.selectionEnd;
   const offset = pageFragment?.start.value ?? 0;
-  if (!typingStore.setSelection(props.block.id, offset + start, offset + end)) return;
+  if (!typingStore.setSelection(props.block.id, offset + start, offset + end))
+    return;
   typingStore.syncFromSpans(styleSpans.value, colorSpans.value, start, end);
 }
 
@@ -140,13 +171,19 @@ function onFocus() {
 
 function onBlur(event: FocusEvent) {
   const related = event.relatedTarget as HTMLElement | null;
-  if (related?.closest?.('[role="toolbar"]') || document.activeElement?.closest?.('[role="toolbar"]')) {
+  if (
+    related?.closest?.('[role="toolbar"]') ||
+    document.activeElement?.closest?.('[role="toolbar"]')
+  ) {
     return;
   }
   if (blurTimer) clearTimeout(blurTimer);
   blurTimer = setTimeout(() => {
     const active = document.activeElement;
-    if (active?.closest?.('[role="toolbar"]') || active?.closest?.(`[data-block-id="${props.block.id}"]`)) {
+    if (
+      active?.closest?.('[role="toolbar"]') ||
+      active?.closest?.(`[data-block-id="${props.block.id}"]`)
+    ) {
       return;
     }
     if (typingStore.activeBlockId === props.block.id) {

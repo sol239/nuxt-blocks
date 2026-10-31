@@ -1,10 +1,13 @@
-import { Block } from "./Block";
-import { CodexBlockSettings } from "./CodexBlockSettings";
+import { Block } from './Block';
+import { CodexBlockSettings } from './CodexBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class CodexBlock extends Block<CodexBlockSettings> {
-  readonly blockType = "codex" as const;
+  readonly blockType = 'codex' as const;
   blockSettings: CodexBlockSettings;
 
   constructor(
@@ -14,11 +17,14 @@ export class CodexBlock extends Block<CodexBlockSettings> {
     settings?: Partial<CodexBlockSettings> | null,
   ) {
     super(id, version, data);
-    this.blockSettings = Object.assign(new CodexBlockSettings(), settings ?? {});
+    this.blockSettings = Object.assign(
+      new CodexBlockSettings(),
+      settings ?? {},
+    );
   }
 
   toMarkdown(): string {
-    return this.data ?? "";
+    return this.data ?? '';
   }
 
   fromMarkdown(markdown: string): this {
@@ -27,4 +33,4 @@ export class CodexBlock extends Block<CodexBlockSettings> {
   }
 }
 
-Block.registerSubclass("codex", CodexBlock);
+Block.registerSubclass('codex', CodexBlock);

@@ -13,4 +13,6 @@ export interface WebBlockControls {
 }
 
 /** A wrapper owns its controls; only its own WebBlock registers here. */
-export const WEB_BLOCK_CONTROLS: InjectionKey<ShallowRef<WebBlockControls | null>> = Symbol('web-block-controls');
+export const WEB_BLOCK_CONTROLS: InjectionKey<
+  ShallowRef<WebBlockControls | null>
+> = Symbol('web-block-controls');

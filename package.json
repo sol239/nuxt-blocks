@@ -42,7 +42,15 @@
     "typecheck": "nuxt typecheck",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm run test:unit",
+    "prepare": "node scripts/install-hooks.mjs"
   },
   "dependencies": {
     "@clack/prompts": "^1.2.0",
@@ -66,9 +74,12 @@
   "devDependencies": {
     "@monaco-editor/loader": "^1.7.0",
     "@playwright/test": "^1.63.0",
+    "eslint-config-prettier": "^10.1.8",
     "katex": "^0.18.7",
     "monaco-editor": "^0.56.0",
     "pixi.js": "^8.21.0",
+    "prettier": "^3.9.10",
+    "vitest": "^5.0.5",
     "vue-tsc": "^3.3.11"
   },
   "peerDependencies": {

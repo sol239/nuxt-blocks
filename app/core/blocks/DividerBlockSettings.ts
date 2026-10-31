@@ -1,4 +1,4 @@
-import type { IBlockSettings, BlockAllignment } from "./IBlockSettings";
+import type { IBlockSettings, BlockAllignment } from './IBlockSettings';
 export class DividerBlockSettings implements IBlockSettings {
-  alignment: BlockAllignment = "left";
+  alignment: BlockAllignment = 'left';
 }

@@ -1,10 +1,13 @@
-import { Block } from "./Block";
-import { AntigravityBlockSettings } from "./AntigravityBlockSettings";
+import { Block } from './Block';
+import { AntigravityBlockSettings } from './AntigravityBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class AntigravityBlock extends Block<AntigravityBlockSettings> {
-  readonly blockType = "antigravity" as const;
+  readonly blockType = 'antigravity' as const;
   blockSettings: AntigravityBlockSettings;
 
   constructor(
@@ -14,11 +17,14 @@ export class AntigravityBlock extends Block<AntigravityBlockSettings> {
     settings?: Partial<AntigravityBlockSettings> | null,
   ) {
     super(id, version, data);
-    this.blockSettings = Object.assign(new AntigravityBlockSettings(), settings ?? {});
+    this.blockSettings = Object.assign(
+      new AntigravityBlockSettings(),
+      settings ?? {},
+    );
   }
 
   toMarkdown(): string {
-    return this.data ?? "";
+    return this.data ?? '';
   }
 
   fromMarkdown(markdown: string): this {
@@ -27,4 +33,4 @@ export class AntigravityBlock extends Block<AntigravityBlockSettings> {
   }
 }
 
-Block.registerSubclass("antigravity", AntigravityBlock);
+Block.registerSubclass('antigravity', AntigravityBlock);

@@ -1,10 +1,13 @@
-import { Block } from "./Block";
-import { ParagraphBlockSettings } from "./ParagraphBlockSettings";
+import { Block } from './Block';
+import { ParagraphBlockSettings } from './ParagraphBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class ParagraphBlock extends Block<ParagraphBlockSettings> {
-  readonly blockType = "paragraph" as const;
+  readonly blockType = 'paragraph' as const;
   blockSettings: ParagraphBlockSettings;
 
   constructor(
@@ -14,11 +17,14 @@ export class ParagraphBlock extends Block<ParagraphBlockSettings> {
     settings?: Partial<ParagraphBlockSettings> | null,
   ) {
     super(id, version, data);
-    this.blockSettings = Object.assign(new ParagraphBlockSettings(), settings ?? {});
+    this.blockSettings = Object.assign(
+      new ParagraphBlockSettings(),
+      settings ?? {},
+    );
   }
 
   toMarkdown(): string {
-    return this.data ?? "";
+    return this.data ?? '';
   }
 
   fromMarkdown(markdown: string): this {
@@ -27,4 +33,4 @@ export class ParagraphBlock extends Block<ParagraphBlockSettings> {
   }
 }
 
-Block.registerSubclass("paragraph", ParagraphBlock);
+Block.registerSubclass('paragraph', ParagraphBlock);

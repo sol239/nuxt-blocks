@@ -19,7 +19,15 @@ export interface RenderSpan {
   color?: string;
 }
 
-export type KnownStyle = "normal" | "bold" | "italic" | "underline" | "strikethrough" | "code" | "math" | "inverse";
+export type KnownStyle =
+  | 'normal'
+  | 'bold'
+  | 'italic'
+  | 'underline'
+  | 'strikethrough'
+  | 'code'
+  | 'math'
+  | 'inverse';
 
 /**
  * Normalizes an array of StyleSpans:
@@ -28,30 +36,33 @@ export type KnownStyle = "normal" | "bold" | "italic" | "underline" | "strikethr
  * - Merges overlapping/adjacent identical styles
  * - Fills any uncovered gaps with "normal"
  */
-export function normalizeStyleSpans(spans: StyleSpan[] = [], textLength: number): StyleSpan[] {
+export function normalizeStyleSpans(
+  spans: StyleSpan[] = [],
+  textLength: number,
+): StyleSpan[] {
   if (textLength <= 0) return [];
   if (!spans || spans.length === 0) {
-    return [{ start: 0, end: textLength, style: "normal" }];
+    return [{ start: 0, end: textLength, style: 'normal' }];
   }
 
   // Break spans into individual character styles
-  const charStyles: string[] = new Array(textLength).fill("normal");
+  const charStyles: string[] = new Array(textLength).fill('normal');
 
   for (const span of spans) {
     const s = Math.max(0, Math.min(span.start, textLength));
     const e = Math.max(0, Math.min(span.end, textLength));
     for (let i = s; i < e; i++) {
-      charStyles[i] = span.style || "normal";
+      charStyles[i] = span.style || 'normal';
     }
   }
 
   // Compress into contiguous spans
   const result: StyleSpan[] = [];
   let currentStart = 0;
-  let currentStyle = charStyles[0] ?? "normal";
+  let currentStyle = charStyles[0] ?? 'normal';
 
   for (let i = 1; i < textLength; i++) {
-    const style = charStyles[i] ?? "normal";
+    const style = charStyles[i] ?? 'normal';
     if (style !== currentStyle) {
       result.push({ start: currentStart, end: i, style: currentStyle });
       currentStart = i;
@@ -69,10 +80,15 @@ export function normalizeStyleSpans(spans: StyleSpan[] = [], textLength: number)
  * - Clips boundaries to [0, textLength]
  * - Merges contiguous identical colors
  */
-export function normalizeColorSpans(spans: ColorSpan[] = [], textLength: number): ColorSpan[] {
+export function normalizeColorSpans(
+  spans: ColorSpan[] = [],
+  textLength: number,
+): ColorSpan[] {
   if (textLength <= 0 || !spans || spans.length === 0) return [];
 
-  const charColors: Array<string | undefined> = new Array(textLength).fill(undefined);
+  const charColors: Array<string | undefined> = new Array(textLength).fill(
+    undefined,
+  );
 
   for (const span of spans) {
     const s = Math.max(0, Math.min(span.start, textLength));
@@ -132,7 +148,9 @@ export function applyStyleToRange(
   // Check if targetStyle is already fully present in the range
   let allHaveStyle = true;
   for (let i = s; i < e; i++) {
-    const currentList = (charStyles[i] ?? "normal").split(/\s+/).filter(Boolean);
+    const currentList = (charStyles[i] ?? 'normal')
+      .split(/\s+/)
+      .filter(Boolean);
     if (!currentList.includes(targetStyle)) {
       allHaveStyle = false;
       break;
@@ -141,24 +159,27 @@ export function applyStyleToRange(
 
   // Toggle style in range
   for (let i = s; i < e; i++) {
-    const current = charStyles[i] ?? "normal";
-    const currentList = current === "normal" ? [] : current.split(/\s+/).filter(Boolean);
+    const current = charStyles[i] ?? 'normal';
+    const currentList =
+      current === 'normal' ? [] : current.split(/\s+/).filter(Boolean);
     let updatedList: string[];
     if (allHaveStyle) {
-      updatedList = currentList.filter(st => st !== targetStyle);
+      updatedList = currentList.filter((st) => st !== targetStyle);
     } else {
-      updatedList = currentList.includes(targetStyle) ? currentList : [...currentList, targetStyle];
+      updatedList = currentList.includes(targetStyle)
+        ? currentList
+        : [...currentList, targetStyle];
     }
-    charStyles[i] = updatedList.length > 0 ? updatedList.join(" ") : "normal";
+    charStyles[i] = updatedList.length > 0 ? updatedList.join(' ') : 'normal';
   }
 
   // Re-encode into StyleSpans
   const result: StyleSpan[] = [];
   let currentStart = 0;
-  let currentVal = charStyles[0] ?? "normal";
+  let currentVal = charStyles[0] ?? 'normal';
 
   for (let i = 1; i < textLength; i++) {
-    const val = charStyles[i] ?? "normal";
+    const val = charStyles[i] ?? 'normal';
     if (val !== currentVal) {
       result.push({ start: currentStart, end: i, style: currentVal });
       currentStart = i;
@@ -184,7 +205,9 @@ export function applyColorToRange(
   const e = Math.max(0, Math.min(end, textLength));
   if (s >= e) return spans;
 
-  const charColors: Array<string | undefined> = new Array(textLength).fill(undefined);
+  const charColors: Array<string | undefined> = new Array(textLength).fill(
+    undefined,
+  );
   for (const span of spans) {
     const spanS = Math.max(0, Math.min(span.start, textLength));
     const spanE = Math.max(0, Math.min(span.end, textLength));
@@ -238,14 +261,22 @@ export function reconcileSpansOnTextChange(
   }
 
   if (oldLen === 0) {
-    const styles: StyleSpan[] = [{ start: 0, end: newLen, style: activeStyle || "normal" }];
-    const colors: ColorSpan[] = activeColor ? [{ start: 0, end: newLen, color: activeColor }] : [];
+    const styles: StyleSpan[] = [
+      { start: 0, end: newLen, style: activeStyle || 'normal' },
+    ];
+    const colors: ColorSpan[] = activeColor
+      ? [{ start: 0, end: newLen, color: activeColor }]
+      : [];
     return { styles, colors };
   }
 
   // Find common prefix
   let prefix = 0;
-  while (prefix < oldLen && prefix < newLen && oldText[prefix] === newText[prefix]) {
+  while (
+    prefix < oldLen &&
+    prefix < newLen &&
+    oldText[prefix] === newText[prefix]
+  ) {
     prefix++;
   }
 
@@ -264,7 +295,7 @@ export function reconcileSpansOnTextChange(
   const insertedCount = newChangedEnd - prefix;
 
   // Unpack old character styles and colors
-  const oldStyles: string[] = new Array(oldLen).fill("normal");
+  const oldStyles: string[] = new Array(oldLen).fill('normal');
   for (const span of styleSpans) {
     const s = Math.max(0, Math.min(span.start, oldLen));
     const e = Math.max(0, Math.min(span.end, oldLen));
@@ -273,7 +304,9 @@ export function reconcileSpansOnTextChange(
     }
   }
 
-  const oldColors: Array<string | undefined> = new Array(oldLen).fill(undefined);
+  const oldColors: Array<string | undefined> = new Array(oldLen).fill(
+    undefined,
+  );
   for (const span of colorSpans) {
     const s = Math.max(0, Math.min(span.start, oldLen));
     const e = Math.max(0, Math.min(span.end, oldLen));
@@ -283,8 +316,12 @@ export function reconcileSpansOnTextChange(
   }
 
   // Inherit style & color for inserted characters
-  const defaultStyle = activeStyle || (prefix > 0 ? oldStyles[prefix - 1] : oldStyles[0]) || "normal";
-  const defaultColor = activeColor || (prefix > 0 ? oldColors[prefix - 1] : oldColors[0]);
+  const defaultStyle =
+    activeStyle ||
+    (prefix > 0 ? oldStyles[prefix - 1] : oldStyles[0]) ||
+    'normal';
+  const defaultColor =
+    activeColor || (prefix > 0 ? oldColors[prefix - 1] : oldColors[0]);
 
   const newStyles: string[] = [
     ...oldStyles.slice(0, prefix),
@@ -301,9 +338,9 @@ export function reconcileSpansOnTextChange(
   // Re-encode into StyleSpan[]
   const styles: StyleSpan[] = [];
   let styleStart = 0;
-  let currentStyle = newStyles[0] ?? "normal";
+  let currentStyle = newStyles[0] ?? 'normal';
   for (let i = 1; i < newLen; i++) {
-    const s = newStyles[i] ?? "normal";
+    const s = newStyles[i] ?? 'normal';
     if (s !== currentStyle) {
       styles.push({ start: styleStart, end: i, style: currentStyle });
       styleStart = i;
@@ -367,12 +404,16 @@ export function buildRenderSpans(
     if (start >= end) continue;
 
     // Find style covering this range
-    const matchedStyleSpan = styleSpans.find(s => s.start <= start && s.end >= end);
-    const style = matchedStyleSpan?.style || "normal";
-    const styles = style === "normal" ? [] : style.split(/\s+/).filter(Boolean);
+    const matchedStyleSpan = styleSpans.find(
+      (s) => s.start <= start && s.end >= end,
+    );
+    const style = matchedStyleSpan?.style || 'normal';
+    const styles = style === 'normal' ? [] : style.split(/\s+/).filter(Boolean);
 
     // Find color covering this range
-    const matchedColorSpan = colorSpans.find(c => c.start <= start && c.end >= end);
+    const matchedColorSpan = colorSpans.find(
+      (c) => c.start <= start && c.end >= end,
+    );
     const color = matchedColorSpan?.color;
 
     result.push({
@@ -404,25 +445,38 @@ export function buildRenderSpans(
   return merged;
 }
 
-
 /** Highlight colors live in style spans so all existing editing and persistence
  * paths preserve their ranges alongside bold, math, and other inline styles. */
 export function highlightColor(style: string): string | undefined {
-  return style.split(/\s+/).find(token => /^highlight:#[0-9a-f]{6}$/i.test(token))?.slice(10);
+  return style
+    .split(/\s+/)
+    .find((token) => /^highlight:#[0-9a-f]{6}$/i.test(token))
+    ?.slice(10);
 }
 
 export function applyHighlightToRange(
-  spans: StyleSpan[], textLength: number, start: number, end: number, color?: string,
+  spans: StyleSpan[],
+  textLength: number,
+  start: number,
+  end: number,
+  color?: string,
 ): StyleSpan[] {
   if (start >= end || textLength <= 0) return spans;
   const normalized = normalizeStyleSpans(spans, textLength);
   const result: StyleSpan[] = [];
   for (const span of normalized) {
-    const from = Math.max(span.start, start), to = Math.min(span.end, end);
-    if (from >= to) { result.push(span); continue; }
+    const from = Math.max(span.start, start),
+      to = Math.min(span.end, end);
+    if (from >= to) {
+      result.push(span);
+      continue;
+    }
     if (span.start < from) result.push({ ...span, end: from });
-    const tokens = span.style.split(/\s+/).filter(token => token !== 'normal' && !token.startsWith('highlight:'));
-    if (color && /^#[0-9a-f]{6}$/i.test(color)) tokens.push(`highlight:${color.toLowerCase()}`);
+    const tokens = span.style
+      .split(/\s+/)
+      .filter((token) => token !== 'normal' && !token.startsWith('highlight:'));
+    if (color && /^#[0-9a-f]{6}$/i.test(color))
+      tokens.push(`highlight:${color.toLowerCase()}`);
     result.push({ start: from, end: to, style: tokens.join(' ') || 'normal' });
     if (to < span.end) result.push({ ...span, start: to });
   }

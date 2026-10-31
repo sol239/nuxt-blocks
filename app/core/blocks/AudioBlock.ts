@@ -1,10 +1,13 @@
-import { Block } from "./Block";
-import { AudioBlockSettings } from "./AudioBlockSettings";
+import { Block } from './Block';
+import { AudioBlockSettings } from './AudioBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class AudioBlock extends Block<AudioBlockSettings> {
-  readonly blockType = "audio" as const;
+  readonly blockType = 'audio' as const;
   blockSettings: AudioBlockSettings;
 
   constructor(
@@ -14,16 +17,19 @@ export class AudioBlock extends Block<AudioBlockSettings> {
     settings?: Partial<AudioBlockSettings> | null,
   ) {
     super(id, version, data);
-    this.blockSettings = Object.assign(new AudioBlockSettings(), settings ?? {});
+    this.blockSettings = Object.assign(
+      new AudioBlockSettings(),
+      settings ?? {},
+    );
   }
 
   toMarkdown(): string {
-    const data = this.data?.trim() ?? "";
-    if (!data) return "#### [audio] unsupported";
+    const data = this.data?.trim() ?? '';
+    if (!data) return '#### [audio] unsupported';
     if (this.blockSettings.isUrl || /^https?:\/\/|^\/|^\.\//.test(data)) {
       return `[Audio](${data})`;
     }
-    return "#### [audio] unsupported";
+    return '#### [audio] unsupported';
   }
 
   fromMarkdown(markdown: string): this {
@@ -31,9 +37,9 @@ export class AudioBlock extends Block<AudioBlockSettings> {
     if (match && match[1]) {
       this.blockSettings.isUrl = true;
       this.data = match[1].trim();
-    } else if (markdown.startsWith("#### [audio] unsupported")) {
-      this.data = "";
-    } else if (markdown.trim().startsWith("http")) {
+    } else if (markdown.startsWith('#### [audio] unsupported')) {
+      this.data = '';
+    } else if (markdown.trim().startsWith('http')) {
       this.blockSettings.isUrl = true;
       this.data = markdown.trim();
     }
@@ -41,4 +47,4 @@ export class AudioBlock extends Block<AudioBlockSettings> {
   }
 }
 
-Block.registerSubclass("audio", AudioBlock);
+Block.registerSubclass('audio', AudioBlock);

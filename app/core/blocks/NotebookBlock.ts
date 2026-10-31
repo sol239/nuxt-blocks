@@ -1,10 +1,13 @@
-import { Block } from "./Block";
-import { NotebookBlockSettings } from "./NotebookBlockSettings";
+import { Block } from './Block';
+import { NotebookBlockSettings } from './NotebookBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class NotebookBlock extends Block<NotebookBlockSettings> {
-  readonly blockType = "notebook" as const;
+  readonly blockType = 'notebook' as const;
   blockSettings: NotebookBlockSettings;
 
   constructor(
@@ -14,11 +17,14 @@ export class NotebookBlock extends Block<NotebookBlockSettings> {
     settings?: Partial<NotebookBlockSettings> | null,
   ) {
     super(id, version, data);
-    this.blockSettings = Object.assign(new NotebookBlockSettings(), settings ?? {});
+    this.blockSettings = Object.assign(
+      new NotebookBlockSettings(),
+      settings ?? {},
+    );
   }
 
   toMarkdown(): string {
-    return this.data ?? "";
+    return this.data ?? '';
   }
 
   fromMarkdown(markdown: string): this {
@@ -27,4 +33,4 @@ export class NotebookBlock extends Block<NotebookBlockSettings> {
   }
 }
 
-Block.registerSubclass("notebook", NotebookBlock);
+Block.registerSubclass('notebook', NotebookBlock);

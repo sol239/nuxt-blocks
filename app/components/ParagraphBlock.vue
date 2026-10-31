@@ -1,5 +1,10 @@
 <template>
-  <div ref="containerRef" class="relative w-full" @paste="onPaste" @focusout="onFocusOut">
+  <div
+    ref="containerRef"
+    class="relative w-full"
+    @paste="onPaste"
+    @focusout="onFocusOut"
+  >
     <RichTextEditor
       ref="editorRef"
       :block="block"
@@ -20,20 +25,33 @@
       class="turn-into-dropdown absolute left-0 z-50 max-h-72 w-56 overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 text-left text-sm font-sans shadow-lg"
       :class="openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'"
     >
-      <div class="flex items-center justify-between px-2 py-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+      <div
+        class="flex items-center justify-between px-2 py-1 text-xs font-semibold uppercase tracking-wider text-gray-400"
+      >
         <span>Turn into</span>
-        <span v-if="searchQuery" class="font-mono text-blue-600 lowercase tracking-normal">/{{ searchQuery }}</span>
+        <span
+          v-if="searchQuery"
+          class="font-mono text-blue-600 lowercase tracking-normal"
+          >/{{ searchQuery }}</span
+        >
       </div>
       <template v-if="filteredOptions.length > 0">
         <button
           v-for="(type, index) in filteredOptions"
           :key="type"
-          :ref="el => { if (index === selectedIndex) selectedButtonRef = el as HTMLButtonElement }"
+          :ref="
+            (el) => {
+              if (index === selectedIndex)
+                selectedButtonRef = el as HTMLButtonElement;
+            }
+          "
           type="button"
           role="menuitem"
           :data-block-type="type"
           class="flex w-full items-center justify-between rounded px-2.5 py-1.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-          :class="{ 'bg-gray-100 font-medium text-gray-900': index === selectedIndex }"
+          :class="{
+            'bg-gray-100 font-medium text-gray-900': index === selectedIndex,
+          }"
           @mousedown.prevent="selectOption(type)"
           @click="selectOption(type)"
         >
@@ -51,24 +69,28 @@
 </template>
 
 <script setup lang="ts">
-import BlockTypeIcon from "./BlockTypeIcon.vue";
-import { useAiBlocks } from "../composables/useAiBlocks";
+import BlockTypeIcon from './BlockTypeIcon.vue';
+import { useAiBlocks } from '../composables/useAiBlocks';
 import { useNotebookCreator } from '../composables/useNotebookCreator';
-import { ref, computed, nextTick, onMounted, onUnmounted, watch } from "vue";
-import type { Block, BlockType } from "~/core/blocks/Block";
-import { blockLabels, initialBlockData, createBlock } from "~/core/blocks/registry";
-import { normalizeMarkedText } from "~/core/blocks/markedText";
-import { useBlocksConfig } from "~/composables/useBlocksConfig";
-import { safeUrl } from "~/core/blocks/media";
-import RichTextEditor from "./RichTextEditor.vue";
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
+import type { Block, BlockType } from '~/core/blocks/Block';
+import {
+  blockLabels,
+  initialBlockData,
+  createBlock,
+} from '~/core/blocks/registry';
+import { normalizeMarkedText } from '~/core/blocks/markedText';
+import { useBlocksConfig } from '~/composables/useBlocksConfig';
+import { safeUrl } from '~/core/blocks/media';
+import RichTextEditor from './RichTextEditor.vue';
 
 const props = defineProps<{
   block: Block;
 }>();
 
 const emit = defineEmits<{
-  "update:block": [value: Block];
-  "add-after": [];
+  'update:block': [value: Block];
+  'add-after': [];
 }>();
 
 const containerRef = ref<HTMLElement>();
@@ -77,7 +99,7 @@ const dropdownRef = ref<HTMLElement>();
 const selectedButtonRef = ref<HTMLButtonElement | null>(null);
 
 const isOpen = ref(false);
-const searchQuery = ref("");
+const searchQuery = ref('');
 const selectedIndex = ref(0);
 const closedExplicitly = ref(false);
 const openUpwards = ref(false);
@@ -88,33 +110,33 @@ const aiBlocks = useAiBlocks();
 
 const availableBlockTypes = computed<BlockType[]>(() => {
   const types: BlockType[] = [
-    "table",
-    "todo",
-    "markdown",
-    "interactive",
-    "web",
-    "heading1",
-    "heading2",
-    "heading3",
-    "bulletedList",
-    "numberedList",
-    "quote",
-    "divider",
+    'table',
+    'todo',
+    'markdown',
+    'interactive',
+    'web',
+    'heading1',
+    'heading2',
+    'heading3',
+    'bulletedList',
+    'numberedList',
+    'quote',
+    'divider',
   ];
 
   if (config.codeBlocksAllowed) {
-    types.push("code");
+    types.push('code');
   }
   if (config.mathAllowed) {
-    types.push("math");
+    types.push('math');
   }
   if (config.drawingBlocksAllowed) {
-    types.push("drawing");
+    types.push('drawing');
   }
 
-  if (notebookCreator) types.push("notebook");
-  if (aiBlocks) types.push("ollama", "codex", "antigravity");
-  types.push("link", "image", "video", "audio");
+  if (notebookCreator) types.push('notebook');
+  if (aiBlocks) types.push('ollama', 'codex', 'antigravity');
+  types.push('link', 'image', 'video', 'audio');
   return types;
 });
 
@@ -122,7 +144,7 @@ const filteredOptions = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   if (!query) return availableBlockTypes.value;
   return availableBlockTypes.value.filter((type) => {
-    const label = (blockLabels[type] ?? "").toLowerCase();
+    const label = (blockLabels[type] ?? '').toLowerCase();
     const typeStr = type.toLowerCase();
     return label.includes(query) || typeStr.includes(query);
   });
@@ -143,21 +165,21 @@ function updateDropdownDirection() {
 
 function scrollSelectedIntoView() {
   nextTick(() => {
-    selectedButtonRef.value?.scrollIntoView({ block: "nearest" });
+    selectedButtonRef.value?.scrollIntoView({ block: 'nearest' });
   });
 }
 
 function handleUpdateBlock(updatedBlock: Block) {
-  const oldText = props.block.data ?? "";
-  const newText = updatedBlock.data ?? "";
+  const oldText = props.block.data ?? '';
+  const newText = updatedBlock.data ?? '';
 
   if (convertMarkdownParagraph(updatedBlock)) return;
 
   // Always emit the typing update so the block stays in sync
-  emit("update:block", updatedBlock);
+  emit('update:block', updatedBlock);
 
   // If new text ended with a newly typed slash, reset closedExplicitly
-  if (newText.endsWith("/") && !oldText.endsWith("/")) {
+  if (newText.endsWith('/') && !oldText.endsWith('/')) {
     closedExplicitly.value = false;
   }
 
@@ -167,7 +189,7 @@ function handleUpdateBlock(updatedBlock: Block) {
   if (match) {
     if (!closedExplicitly.value) {
       isOpen.value = true;
-      searchQuery.value = "";
+      searchQuery.value = '';
       nextTick(() => updateDropdownDirection());
     }
   } else if (!isOpen.value) {
@@ -176,11 +198,15 @@ function handleUpdateBlock(updatedBlock: Block) {
 }
 
 function convertMarkdownParagraph(updatedBlock: Block): boolean {
-  const text = updatedBlock.data ?? "";
-  const type = text.trim() === "---" ? "divider"
-    : /^-[ \t]+\S/.test(text) ? "bulletedList"
-    : /^\d+\.[ \t]+\S/.test(text) ? "numberedList"
-    : null;
+  const text = updatedBlock.data ?? '';
+  const type =
+    text.trim() === '---'
+      ? 'divider'
+      : /^-[ \t]+\S/.test(text)
+        ? 'bulletedList'
+        : /^\d+\.[ \t]+\S/.test(text)
+          ? 'numberedList'
+          : null;
   if (!type) return false;
 
   const field = editorRef.value?.textarea;
@@ -188,19 +214,24 @@ function convertMarkdownParagraph(updatedBlock: Block): boolean {
   const end = field?.selectionEnd ?? start;
   const parent = containerRef.value?.parentElement;
   isOpen.value = false;
-  emit("update:block", createBlock(
-    type, updatedBlock.id, updatedBlock.version,
-    type === "divider" ? "---" : text,
-    { ...updatedBlock.blockSettings },
-  ));
+  emit(
+    'update:block',
+    createBlock(
+      type,
+      updatedBlock.id,
+      updatedBlock.version,
+      type === 'divider' ? '---' : text,
+      { ...updatedBlock.blockSettings },
+    ),
+  );
 
-  if (type === "divider") {
-    emit("add-after");
+  if (type === 'divider') {
+    emit('add-after');
     return true;
   }
 
   nextTick(async () => {
-    const target = parent?.querySelector<HTMLTextAreaElement>("textarea");
+    const target = parent?.querySelector<HTMLTextAreaElement>('textarea');
     if (target) {
       // List editors start in rendered mode; reveal their textarea before focusing.
       target.parentElement?.click();
@@ -214,55 +245,68 @@ function convertMarkdownParagraph(updatedBlock: Block): boolean {
 
 function convertUrlParagraph(text: string): boolean {
   const trimmed = text.trim();
-  const value = trimmed.match(/^\[[^\]\n]*\]\((https?:\/\/[^\s]+)\)$/i)?.[1] ?? trimmed;
-  if (/\s/.test(value) || !/^https?:\/\//i.test(value) || !safeUrl(value)) return false;
+  const value =
+    trimmed.match(/^\[[^\]\n]*\]\((https?:\/\/[^\s]+)\)$/i)?.[1] ?? trimmed;
+  if (/\s/.test(value) || !/^https?:\/\//i.test(value) || !safeUrl(value))
+    return false;
   isOpen.value = false;
-  emit("update:block", createBlock("link", props.block.id, props.block.version, value));
+  emit(
+    'update:block',
+    createBlock('link', props.block.id, props.block.version, value),
+  );
   return true;
 }
 
 function onPaste(event: ClipboardEvent) {
   const field = event.target;
   if (!(field instanceof HTMLTextAreaElement) || !event.clipboardData) return;
-  const text = field.value.slice(0, field.selectionStart)
-    + event.clipboardData.getData("text/plain")
-    + field.value.slice(field.selectionEnd);
+  const text =
+    field.value.slice(0, field.selectionStart) +
+    event.clipboardData.getData('text/plain') +
+    field.value.slice(field.selectionEnd);
   if (convertUrlParagraph(text)) event.preventDefault();
 }
 
 function onFocusOut(event: FocusEvent) {
   const related = event.relatedTarget as HTMLElement | null;
-  if (related?.closest('[role="toolbar"]') || containerRef.value?.contains(related)) return;
-  if (event.target instanceof HTMLTextAreaElement) convertUrlParagraph(event.target.value);
+  if (
+    related?.closest('[role="toolbar"]') ||
+    containerRef.value?.contains(related)
+  )
+    return;
+  if (event.target instanceof HTMLTextAreaElement)
+    convertUrlParagraph(event.target.value);
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === "/") {
+  if (event.key === '/') {
     closedExplicitly.value = false;
   }
 
   if (!isOpen.value) return;
 
-  if (event.key === "ArrowDown") {
-    event.preventDefault();
-    if (filteredOptions.value.length > 0) {
-      selectedIndex.value = (selectedIndex.value + 1) % filteredOptions.value.length;
-      scrollSelectedIntoView();
-    }
-    return;
-  }
-
-  if (event.key === "ArrowUp") {
+  if (event.key === 'ArrowDown') {
     event.preventDefault();
     if (filteredOptions.value.length > 0) {
       selectedIndex.value =
-        (selectedIndex.value - 1 + filteredOptions.value.length) % filteredOptions.value.length;
+        (selectedIndex.value + 1) % filteredOptions.value.length;
       scrollSelectedIntoView();
     }
     return;
   }
 
-  if (event.key === "Enter" || event.key === "Tab") {
+  if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    if (filteredOptions.value.length > 0) {
+      selectedIndex.value =
+        (selectedIndex.value - 1 + filteredOptions.value.length) %
+        filteredOptions.value.length;
+      scrollSelectedIntoView();
+    }
+    return;
+  }
+
+  if (event.key === 'Enter' || event.key === 'Tab') {
     if (filteredOptions.value.length > 0) {
       event.preventDefault();
       const target = filteredOptions.value[selectedIndex.value];
@@ -273,16 +317,16 @@ function handleKeydown(event: KeyboardEvent) {
     return;
   }
 
-  if (event.key === "Escape") {
+  if (event.key === 'Escape') {
     event.preventDefault();
     event.stopPropagation();
     isOpen.value = false;
-    searchQuery.value = "";
+    searchQuery.value = '';
     closedExplicitly.value = true;
     return;
   }
 
-  if (event.key === "Backspace") {
+  if (event.key === 'Backspace') {
     if (searchQuery.value.length > 0) {
       event.preventDefault();
       searchQuery.value = searchQuery.value.slice(0, -1);
@@ -294,16 +338,21 @@ function handleKeydown(event: KeyboardEvent) {
     return;
   }
 
-  if (event.key === " ") {
+  if (event.key === ' ') {
     // Space cancels slash menu and resumes normal writing
     isOpen.value = false;
-    searchQuery.value = "";
+    searchQuery.value = '';
     closedExplicitly.value = true;
     return;
   }
 
   // Prevent writing characters into the textarea while dropdown is open, and use them to filter
-  if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  if (
+    event.key.length === 1 &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  ) {
     event.preventDefault();
     searchQuery.value += event.key;
     return;
@@ -313,55 +362,60 @@ function handleKeydown(event: KeyboardEvent) {
 function stripSlashCommand(text: string): string {
   const match = text.match(/(^|[\s\n])\/$/);
   if (match && match.index !== undefined) {
-    const keepUntil = match.index + (match[1] ?? "").length;
+    const keepUntil = match.index + (match[1] ?? '').length;
     return text.slice(0, keepUntil).trimEnd();
   }
-  return text.replace(/\/$/, "").trimEnd();
+  return text.replace(/\/$/, '').trimEnd();
 }
 
 function selectOption(targetType: BlockType) {
   isOpen.value = false;
-  searchQuery.value = "";
+  searchQuery.value = '';
   closedExplicitly.value = false;
 
-  const rawText = stripSlashCommand(props.block.data ?? "");
+  const rawText = stripSlashCommand(props.block.data ?? '');
 
   let newData = rawText;
-  if (targetType === "todo") {
-    newData = rawText ? `### To do\n${rawText.split("\n").map(line => `- [ ] ${line}`).join("\n")}` : initialBlockData("todo");
-  } else if (targetType === "bulletedList") {
-    newData = rawText ? normalizeMarkedText(rawText, "bulletedList") : "- ";
-  } else if (targetType === "numberedList") {
-    newData = rawText ? normalizeMarkedText(rawText, "numberedList") : "1. ";
-  } else if (targetType === "quote") {
-    newData = rawText ? normalizeMarkedText(rawText, "quote") : "> ";
-  } else if (targetType === "divider") {
-    newData = "---";
-  } else if (targetType === "web") {
-    newData = rawText || initialBlockData("web");
-  } else if (targetType === "table") {
-    newData = initialBlockData("table");
-  } else if (targetType === "interactive") {
-    newData = initialBlockData("interactive");
-  } else if (targetType === "drawing") {
+  if (targetType === 'todo') {
+    newData = rawText
+      ? `### To do\n${rawText
+          .split('\n')
+          .map((line) => `- [ ] ${line}`)
+          .join('\n')}`
+      : initialBlockData('todo');
+  } else if (targetType === 'bulletedList') {
+    newData = rawText ? normalizeMarkedText(rawText, 'bulletedList') : '- ';
+  } else if (targetType === 'numberedList') {
+    newData = rawText ? normalizeMarkedText(rawText, 'numberedList') : '1. ';
+  } else if (targetType === 'quote') {
+    newData = rawText ? normalizeMarkedText(rawText, 'quote') : '> ';
+  } else if (targetType === 'divider') {
+    newData = '---';
+  } else if (targetType === 'web') {
+    newData = rawText || initialBlockData('web');
+  } else if (targetType === 'table') {
+    newData = initialBlockData('table');
+  } else if (targetType === 'interactive') {
+    newData = initialBlockData('interactive');
+  } else if (targetType === 'drawing') {
     newData = JSON.stringify({ strokes: [] });
   }
 
   const textBlockTypes = new Set([
-    "paragraph",
-    "heading1",
-    "heading2",
-    "heading3",
-    "bulletedList",
-    "numberedList",
-    "quote",
+    'paragraph',
+    'heading1',
+    'heading2',
+    'heading3',
+    'bulletedList',
+    'numberedList',
+    'quote',
   ]);
 
   let fontSize: number | undefined;
   if (textBlockTypes.has(targetType)) {
-    if (targetType === "heading1") fontSize = 36;
-    else if (targetType === "heading2") fontSize = 28;
-    else if (targetType === "heading3") fontSize = 22;
+    if (targetType === 'heading1') fontSize = 36;
+    else if (targetType === 'heading2') fontSize = 28;
+    else if (targetType === 'heading3') fontSize = 22;
     else fontSize = 16;
   }
 
@@ -371,29 +425,31 @@ function selectOption(targetType: BlockType) {
     props.block.version,
     newData,
     {
-      alignment: props.block.blockSettings?.alignment ?? "left",
-      fontFamily: props.block.blockSettings?.fontFamily ?? "Inter",
+      alignment: props.block.blockSettings?.alignment ?? 'left',
+      fontFamily: props.block.blockSettings?.fontFamily ?? 'Inter',
       ...(fontSize !== undefined ? { fontSize } : {}),
     },
   );
 
   const blockId = props.block.id;
   const parentEl = containerRef.value?.parentElement;
-  emit("update:block", newBlock);
+  emit('update:block', newBlock);
 
   nextTick(() => {
     const focusTarget = () => {
       const blockEl =
-        document.querySelector(`[data-block-id="${blockId}"]`) ??
-        parentEl;
+        document.querySelector(`[data-block-id="${blockId}"]`) ?? parentEl;
       if (!blockEl) return false;
       const input =
         blockEl.querySelector<HTMLTextAreaElement | HTMLInputElement>(
-          "textarea, input, [contenteditable='true']"
+          "textarea, input, [contenteditable='true']",
         ) ?? blockEl.querySelector<HTMLElement>("button, [tabindex='0']");
       if (input) {
         input.focus();
-        if (input instanceof HTMLTextAreaElement || input instanceof HTMLInputElement) {
+        if (
+          input instanceof HTMLTextAreaElement ||
+          input instanceof HTMLInputElement
+        ) {
           const len = input.value.length;
           input.setSelectionRange(len, len);
         }
@@ -417,17 +473,17 @@ function onOutsidePointer(event: MouseEvent | PointerEvent) {
   const target = event.target as Node | null;
   if (containerRef.value && !containerRef.value.contains(target)) {
     isOpen.value = false;
-    searchQuery.value = "";
+    searchQuery.value = '';
     closedExplicitly.value = true;
   }
 }
 
 onMounted(() => {
-  document.addEventListener("pointerdown", onOutsidePointer);
+  document.addEventListener('pointerdown', onOutsidePointer);
 });
 
 onUnmounted(() => {
-  document.removeEventListener("pointerdown", onOutsidePointer);
+  document.removeEventListener('pointerdown', onOutsidePointer);
 });
 
 defineExpose({

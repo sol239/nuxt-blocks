@@ -9,7 +9,11 @@
     <!-- Main Toolbar Bar -->
     <div class="flex flex-wrap items-center gap-2">
       <!-- Tool switch: Pen / Eraser -->
-      <div class="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5" role="radiogroup" aria-label="Tool selection">
+      <div
+        class="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5"
+        role="radiogroup"
+        aria-label="Tool selection"
+      >
         <button
           type="button"
           role="radio"
@@ -17,7 +21,11 @@
           title="Pen tool"
           aria-label="Pen tool"
           class="flex items-center gap-1 rounded-md px-2.5 py-1 font-medium transition-colors focus:outline-none"
-          :class="activeTool === 'pen' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-800'"
+          :class="
+            activeTool === 'pen'
+              ? 'bg-white text-gray-900 shadow-xs'
+              : 'text-gray-500 hover:text-gray-800'
+          "
           @click="emit('update:activeTool', 'pen')"
         >
           <Icon name="material-symbols:draw" class="size-4" />
@@ -31,7 +39,11 @@
           title="Eraser tool"
           aria-label="Eraser tool"
           class="flex items-center gap-1 rounded-md px-2.5 py-1 font-medium transition-colors focus:outline-none"
-          :class="activeTool === 'eraser' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-800'"
+          :class="
+            activeTool === 'eraser'
+              ? 'bg-white text-gray-900 shadow-xs'
+              : 'text-gray-500 hover:text-gray-800'
+          "
           @click="emit('update:activeTool', 'eraser')"
         >
           <Icon name="material-symbols:ink-eraser-outline" class="size-4" />
@@ -52,7 +64,11 @@
             :title="`Color ${color}`"
             :aria-label="`Color ${color}`"
             class="size-5 rounded-full border transition-transform hover:scale-110 focus:outline-none"
-            :class="penColor.toLowerCase() === color.toLowerCase() ? 'border-blue-500 ring-2 ring-blue-300 ring-offset-1 scale-105' : 'border-gray-300'"
+            :class="
+              penColor.toLowerCase() === color.toLowerCase()
+                ? 'border-blue-500 ring-2 ring-blue-300 ring-offset-1 scale-105'
+                : 'border-gray-300'
+            "
             :style="{ backgroundColor: color }"
             @click="emit('update:penColor', color)"
           />
@@ -88,7 +104,9 @@
             class="h-1.5 w-16 cursor-pointer accent-blue-600"
             @input="onPenWidthInput"
           />
-          <span class="w-7 font-mono text-[11px] text-gray-500">{{ penWidth }}px</span>
+          <span class="w-7 font-mono text-[11px] text-gray-500"
+            >{{ penWidth }}px</span
+          >
         </div>
 
         <div class="h-4 w-px bg-gray-200" />
@@ -107,7 +125,9 @@
             class="h-1.5 w-16 cursor-pointer accent-blue-600"
             @input="onSmoothingInput"
           />
-          <span class="w-8 font-mono text-[11px] text-gray-500">{{ Math.round(smoothing * 100) }}%</span>
+          <span class="w-8 font-mono text-[11px] text-gray-500"
+            >{{ Math.round(smoothing * 100) }}%</span
+          >
         </div>
       </template>
 
@@ -126,7 +146,9 @@
             class="h-1.5 w-20 cursor-pointer accent-blue-600"
             @input="onEraserWidthInput"
           />
-          <span class="w-7 font-mono text-[11px] text-gray-500">{{ eraserWidth }}px</span>
+          <span class="w-7 font-mono text-[11px] text-gray-500"
+            >{{ eraserWidth }}px</span
+          >
         </div>
       </template>
 
@@ -170,13 +192,24 @@
         type="button"
         class="flex items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-gray-100 text-gray-600"
         :class="isExperimentalOpen ? 'bg-blue-50 text-blue-700' : ''"
-        :title="isExperimentalOpen ? 'Collapse experimental smoothing controls' : 'Expand experimental smoothing controls'"
+        :title="
+          isExperimentalOpen
+            ? 'Collapse experimental smoothing controls'
+            : 'Expand experimental smoothing controls'
+        "
         :aria-expanded="isExperimentalOpen"
         @click="isExperimentalOpen = !isExperimentalOpen"
       >
         <Icon name="material-symbols:tune" class="size-4 text-blue-600" />
         <span class="font-medium">Smoothing</span>
-        <Icon :name="isExperimentalOpen ? 'material-symbols:expand-less' : 'material-symbols:expand-more'" class="size-4 text-gray-400" />
+        <Icon
+          :name="
+            isExperimentalOpen
+              ? 'material-symbols:expand-less'
+              : 'material-symbols:expand-more'
+          "
+          class="size-4 text-gray-400"
+        />
       </button>
     </div>
 
@@ -188,7 +221,10 @@
       <!-- Pipeline Checkboxes -->
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
         <span class="font-semibold text-gray-600 flex items-center gap-1">
-          <Icon name="material-symbols:science-outline" class="size-3.5 text-blue-600" />
+          <Icon
+            name="material-symbols:science-outline"
+            class="size-3.5 text-blue-600"
+          />
           Pipeline:
         </span>
 
@@ -197,9 +233,21 @@
             type="checkbox"
             :checked="smoothingOptions.useCoalescedEvents"
             class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 size-3.5"
-            @change="updateOption('useCoalescedEvents', ($event.target as HTMLInputElement).checked)"
+            @change="
+              updateOption(
+                'useCoalescedEvents',
+                ($event.target as HTMLInputElement).checked,
+              )
+            "
           />
-          <span :class="smoothingOptions.useCoalescedEvents ? 'font-medium text-gray-900' : 'text-gray-500'">Coalesced events</span>
+          <span
+            :class="
+              smoothingOptions.useCoalescedEvents
+                ? 'font-medium text-gray-900'
+                : 'text-gray-500'
+            "
+            >Coalesced events</span
+          >
         </label>
 
         <label class="flex items-center gap-1.5 cursor-pointer">
@@ -207,9 +255,21 @@
             type="checkbox"
             :checked="smoothingOptions.useResampling"
             class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 size-3.5"
-            @change="updateOption('useResampling', ($event.target as HTMLInputElement).checked)"
+            @change="
+              updateOption(
+                'useResampling',
+                ($event.target as HTMLInputElement).checked,
+              )
+            "
           />
-          <span :class="smoothingOptions.useResampling ? 'font-medium text-gray-900' : 'text-gray-500'">Resampling</span>
+          <span
+            :class="
+              smoothingOptions.useResampling
+                ? 'font-medium text-gray-900'
+                : 'text-gray-500'
+            "
+            >Resampling</span
+          >
         </label>
 
         <label class="flex items-center gap-1.5 cursor-pointer">
@@ -217,9 +277,21 @@
             type="checkbox"
             :checked="smoothingOptions.useOneEuroFilter"
             class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 size-3.5"
-            @change="updateOption('useOneEuroFilter', ($event.target as HTMLInputElement).checked)"
+            @change="
+              updateOption(
+                'useOneEuroFilter',
+                ($event.target as HTMLInputElement).checked,
+              )
+            "
           />
-          <span :class="smoothingOptions.useOneEuroFilter ? 'font-medium text-gray-900' : 'text-gray-500'">One Euro filter</span>
+          <span
+            :class="
+              smoothingOptions.useOneEuroFilter
+                ? 'font-medium text-gray-900'
+                : 'text-gray-500'
+            "
+            >One Euro filter</span
+          >
         </label>
 
         <label class="flex items-center gap-1.5 cursor-pointer">
@@ -227,9 +299,21 @@
             type="checkbox"
             :checked="smoothingOptions.useCurveInterpolation"
             class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 size-3.5"
-            @change="updateOption('useCurveInterpolation', ($event.target as HTMLInputElement).checked)"
+            @change="
+              updateOption(
+                'useCurveInterpolation',
+                ($event.target as HTMLInputElement).checked,
+              )
+            "
           />
-          <span :class="smoothingOptions.useCurveInterpolation ? 'font-medium text-gray-900' : 'text-gray-500'">Curve interpolation</span>
+          <span
+            :class="
+              smoothingOptions.useCurveInterpolation
+                ? 'font-medium text-gray-900'
+                : 'text-gray-500'
+            "
+            >Curve interpolation</span
+          >
         </label>
 
         <label class="flex items-center gap-1.5 cursor-pointer">
@@ -237,9 +321,21 @@
             type="checkbox"
             :checked="smoothingOptions.useFinalSmoothing"
             class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 size-3.5"
-            @change="updateOption('useFinalSmoothing', ($event.target as HTMLInputElement).checked)"
+            @change="
+              updateOption(
+                'useFinalSmoothing',
+                ($event.target as HTMLInputElement).checked,
+              )
+            "
           />
-          <span :class="smoothingOptions.useFinalSmoothing ? 'font-medium text-gray-900' : 'text-gray-500'">Final smoothing</span>
+          <span
+            :class="
+              smoothingOptions.useFinalSmoothing
+                ? 'font-medium text-gray-900'
+                : 'text-gray-500'
+            "
+            >Final smoothing</span
+          >
         </label>
 
         <label class="flex items-center gap-1.5 cursor-pointer">
@@ -247,15 +343,32 @@
             type="checkbox"
             :checked="smoothingOptions.usePrediction"
             class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 size-3.5"
-            @change="updateOption('usePrediction', ($event.target as HTMLInputElement).checked)"
+            @change="
+              updateOption(
+                'usePrediction',
+                ($event.target as HTMLInputElement).checked,
+              )
+            "
           />
-          <span :class="smoothingOptions.usePrediction ? 'font-medium text-gray-900' : 'text-gray-500'">Prediction</span>
+          <span
+            :class="
+              smoothingOptions.usePrediction
+                ? 'font-medium text-gray-900'
+                : 'text-gray-500'
+            "
+            >Prediction</span
+          >
         </label>
       </div>
 
       <!-- Numeric Tuning Controls -->
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-600">
-        <div class="flex items-center gap-1.5" title="One Euro minimum cutoff frequency">
+      <div
+        class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-600"
+      >
+        <div
+          class="flex items-center gap-1.5"
+          title="One Euro minimum cutoff frequency"
+        >
           <label class="text-gray-500">Min cutoff:</label>
           <input
             type="number"
@@ -264,11 +377,19 @@
             step="0.1"
             :value="smoothingOptions.minCutoff"
             class="w-14 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs font-mono focus:border-blue-500 focus:outline-none"
-            @input="updateOption('minCutoff', Number(($event.target as HTMLInputElement).value))"
+            @input="
+              updateOption(
+                'minCutoff',
+                Number(($event.target as HTMLInputElement).value),
+              )
+            "
           />
         </div>
 
-        <div class="flex items-center gap-1.5" title="One Euro speed coefficient">
+        <div
+          class="flex items-center gap-1.5"
+          title="One Euro speed coefficient"
+        >
           <label class="text-gray-500">Beta:</label>
           <input
             type="number"
@@ -277,11 +398,19 @@
             step="0.005"
             :value="smoothingOptions.beta"
             class="w-16 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs font-mono focus:border-blue-500 focus:outline-none"
-            @input="updateOption('beta', Number(($event.target as HTMLInputElement).value))"
+            @input="
+              updateOption(
+                'beta',
+                Number(($event.target as HTMLInputElement).value),
+              )
+            "
           />
         </div>
 
-        <div class="flex items-center gap-1.5" title="Minimum distance between consecutive points in pixels">
+        <div
+          class="flex items-center gap-1.5"
+          title="Minimum distance between consecutive points in pixels"
+        >
           <label class="text-gray-500">Point dist:</label>
           <input
             type="number"
@@ -290,12 +419,20 @@
             step="0.5"
             :value="smoothingOptions.minPointDistance"
             class="w-14 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs font-mono focus:border-blue-500 focus:outline-none"
-            @input="updateOption('minPointDistance', Number(($event.target as HTMLInputElement).value))"
+            @input="
+              updateOption(
+                'minPointDistance',
+                Number(($event.target as HTMLInputElement).value),
+              )
+            "
           />
           <span class="text-gray-400 text-[11px]">px</span>
         </div>
 
-        <div class="flex items-center gap-1.5" title="Prediction horizon in milliseconds">
+        <div
+          class="flex items-center gap-1.5"
+          title="Prediction horizon in milliseconds"
+        >
           <label class="text-gray-500">Prediction:</label>
           <input
             type="number"
@@ -304,7 +441,12 @@
             step="1"
             :value="smoothingOptions.predictionMs"
             class="w-14 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs font-mono focus:border-blue-500 focus:outline-none"
-            @input="updateOption('predictionMs', Number(($event.target as HTMLInputElement).value))"
+            @input="
+              updateOption(
+                'predictionMs',
+                Number(($event.target as HTMLInputElement).value),
+              )
+            "
           />
           <span class="text-gray-400 text-[11px]">ms</span>
         </div>
@@ -323,17 +465,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import type { DrawingTool } from "~/core/blocks/DrawingBlock";
-import type { DrawingSmoothingOptions } from "~/core/blocks/drawingGeometry";
+import { ref } from 'vue';
+import type { DrawingTool } from '~/core/blocks/DrawingBlock';
+import type { DrawingSmoothingOptions } from '~/core/blocks/drawingGeometry';
 
 const palette = [
-  "#111827", // Charcoal/Black
-  "#2563eb", // Blue
-  "#dc2626", // Red
-  "#16a34a", // Green
-  "#d97706", // Amber
-  "#9333ea", // Purple
+  '#111827', // Charcoal/Black
+  '#2563eb', // Blue
+  '#dc2626', // Red
+  '#16a34a', // Green
+  '#d97706', // Amber
+  '#9333ea', // Purple
 ];
 
 const isExperimentalOpen = ref(false);
@@ -350,19 +492,22 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "update:activeTool": [tool: DrawingTool];
-  "update:penColor": [color: string];
-  "update:penWidth": [width: number];
-  "update:eraserWidth": [width: number];
-  "update:smoothing": [smoothing: number];
-  "update:smoothingOptions": [options: DrawingSmoothingOptions];
+  'update:activeTool': [tool: DrawingTool];
+  'update:penColor': [color: string];
+  'update:penWidth': [width: number];
+  'update:eraserWidth': [width: number];
+  'update:smoothing': [smoothing: number];
+  'update:smoothingOptions': [options: DrawingSmoothingOptions];
   resetSmoothing: [];
   undo: [];
   clear: [];
 }>();
 
-function updateOption<K extends keyof DrawingSmoothingOptions>(key: K, value: DrawingSmoothingOptions[K]) {
-  emit("update:smoothingOptions", {
+function updateOption<K extends keyof DrawingSmoothingOptions>(
+  key: K,
+  value: DrawingSmoothingOptions[K],
+) {
+  emit('update:smoothingOptions', {
     ...props.smoothingOptions,
     [key]: value,
   });
@@ -370,21 +515,21 @@ function updateOption<K extends keyof DrawingSmoothingOptions>(key: K, value: Dr
 
 function onColorInput(e: Event) {
   const target = e.target as HTMLInputElement;
-  if (target) emit("update:penColor", target.value);
+  if (target) emit('update:penColor', target.value);
 }
 
 function onPenWidthInput(e: Event) {
   const target = e.target as HTMLInputElement;
-  if (target) emit("update:penWidth", Number(target.value));
+  if (target) emit('update:penWidth', Number(target.value));
 }
 
 function onEraserWidthInput(e: Event) {
   const target = e.target as HTMLInputElement;
-  if (target) emit("update:eraserWidth", Number(target.value));
+  if (target) emit('update:eraserWidth', Number(target.value));
 }
 
 function onSmoothingInput(e: Event) {
   const target = e.target as HTMLInputElement;
-  if (target) emit("update:smoothing", Number(target.value));
+  if (target) emit('update:smoothing', Number(target.value));
 }
 </script>

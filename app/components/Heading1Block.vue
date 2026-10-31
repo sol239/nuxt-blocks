@@ -9,14 +9,14 @@
 </template>
 
 <script setup lang="ts">
-import type { Block } from "~/core/blocks/Block";
-import RichTextEditor from "./RichTextEditor.vue";
+import type { Block } from '~/core/blocks/Block';
+import RichTextEditor from './RichTextEditor.vue';
 
 defineProps<{
   block: Block;
 }>();
 
 const emit = defineEmits<{
-  "update:block": [value: Block];
+  'update:block': [value: Block];
 }>();
 </script>

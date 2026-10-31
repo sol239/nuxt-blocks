@@ -1,5 +1,7 @@
 <template>
-  <div class="w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+  <div
+    class="w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+  >
     <!-- Hidden native audio element -->
     <audio
       ref="audioEl"
@@ -25,13 +27,28 @@
         @click="togglePlay"
       >
         <!-- Pause icon -->
-        <svg v-if="isPlaying" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <svg
+          v-if="isPlaying"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
           <rect x="6" y="4" width="4" height="16" rx="1.5" />
           <rect x="14" y="4" width="4" height="16" rx="1.5" />
         </svg>
         <!-- Play icon -->
-        <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="ml-0.5">
-          <path d="M5 3.868v16.264c0 .858.948 1.375 1.667.915l13.111-8.132a1.077 1.077 0 0 0 0-1.83L6.667 2.953C5.948 2.493 5 3.01 5 3.868Z" />
+        <svg
+          v-else
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          class="ml-0.5"
+        >
+          <path
+            d="M5 3.868v16.264c0 .858.948 1.375 1.667.915l13.111-8.132a1.077 1.077 0 0 0 0-1.83L6.667 2.953C5.948 2.493 5 3.01 5 3.868Z"
+          />
         </svg>
       </button>
 
@@ -59,7 +76,9 @@
           @mousedown="onScrubberMouseDown"
         >
           <!-- Track background -->
-          <div class="h-1.5 w-full rounded-full bg-gray-100 group-hover/bar:h-2 transition-all">
+          <div
+            class="h-1.5 w-full rounded-full bg-gray-100 group-hover/bar:h-2 transition-all"
+          >
             <!-- Progress fill -->
             <div
               class="h-full rounded-full bg-blue-600 transition-[width] duration-75"
@@ -83,15 +102,37 @@
         @click="toggleMute"
       >
         <!-- Muted icon -->
-        <svg v-if="isMuted" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          v-if="isMuted"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
           <line x1="23" y1="9" x2="17" y2="15" />
           <line x1="17" y1="9" x2="23" y2="15" />
         </svg>
         <!-- Sound icon -->
-        <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          v-else
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+          <path
+            d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"
+          />
         </svg>
       </button>
 
@@ -103,7 +144,16 @@
         class="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition focus:outline-none"
         @click="$emit('edit')"
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
         </svg>
       </button>
@@ -131,16 +181,16 @@ const duration = ref(0);
 const isMuted = ref(false);
 
 const displayTitle = computed(() => {
-  if (props.title && props.title !== "(file uploaded)") {
+  if (props.title && props.title !== '(file uploaded)') {
     try {
       const parsed = new URL(props.title);
-      const filename = parsed.pathname.split("/").pop();
+      const filename = parsed.pathname.split('/').pop();
       if (filename) return decodeURIComponent(filename);
     } catch {
       return props.title;
     }
   }
-  return "Audio track";
+  return 'Audio track';
 });
 
 const progressPercent = computed(() => {
@@ -149,10 +199,10 @@ const progressPercent = computed(() => {
 });
 
 function formatTime(seconds: number): string {
-  if (isNaN(seconds) || !isFinite(seconds) || seconds < 0) return "0:00";
+  if (isNaN(seconds) || !isFinite(seconds) || seconds < 0) return '0:00';
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function togglePlay() {
@@ -161,7 +211,7 @@ function togglePlay() {
     audioEl.value.pause();
   } else {
     audioEl.value.play().catch(() => {
-      emit("error", "Unable to play this audio.");
+      emit('error', 'Unable to play this audio.');
     });
   }
 }
@@ -193,7 +243,7 @@ function onEnded() {
 }
 
 function onError() {
-  emit("error", "Unable to load this audio.");
+  emit('error', 'Unable to load this audio.');
 }
 
 function seek(event: MouseEvent) {
@@ -209,11 +259,11 @@ function onScrubberMouseDown(event: MouseEvent) {
   seek(event);
   const onMouseMove = (e: MouseEvent) => seek(e);
   const onMouseUp = () => {
-    window.removeEventListener("mousemove", onMouseMove);
-    window.removeEventListener("mouseup", onMouseUp);
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup', onMouseUp);
   };
-  window.addEventListener("mousemove", onMouseMove);
-  window.addEventListener("mouseup", onMouseUp);
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
 }
 
 onMounted(() => {
@@ -224,4 +274,3 @@ onMounted(() => {
   });
 });
 </script>
-

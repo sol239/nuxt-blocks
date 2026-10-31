@@ -1,30 +1,36 @@
-import { Block } from "./Block";
-import { DividerBlockSettings } from "./DividerBlockSettings";
+import { Block } from './Block';
+import { DividerBlockSettings } from './DividerBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class DividerBlock extends Block<DividerBlockSettings> {
-  readonly blockType = "divider" as const;
+  readonly blockType = 'divider' as const;
   blockSettings: DividerBlockSettings;
 
   constructor(
     id: string = generateId(),
     version: number = 1,
-    data: string | null = "---",
+    data: string | null = '---',
     settings?: Partial<DividerBlockSettings> | null,
   ) {
-    super(id, version, data ?? "---");
-    this.blockSettings = Object.assign(new DividerBlockSettings(), settings ?? {});
+    super(id, version, data ?? '---');
+    this.blockSettings = Object.assign(
+      new DividerBlockSettings(),
+      settings ?? {},
+    );
   }
 
   toMarkdown(): string {
-    return "---";
+    return '---';
   }
 
-  fromMarkdown(markdown: string): this {
-    this.data = "---";
+  fromMarkdown(_markdown: string): this {
+    this.data = '---';
     return this;
   }
 }
 
-Block.registerSubclass("divider", DividerBlock);
+Block.registerSubclass('divider', DividerBlock);

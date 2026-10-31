@@ -1,10 +1,13 @@
-import { Block } from "./Block";
-import { MathBlockSettings } from "./MathBlockSettings";
+import { Block } from './Block';
+import { MathBlockSettings } from './MathBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class MathBlock extends Block<MathBlockSettings> {
-  readonly blockType = "math" as const;
+  readonly blockType = 'math' as const;
   blockSettings: MathBlockSettings;
 
   constructor(
@@ -18,7 +21,7 @@ export class MathBlock extends Block<MathBlockSettings> {
   }
 
   toMarkdown(): string {
-    return `$$\n${this.data ?? ""}\n$$`;
+    return `$$\n${this.data ?? ''}\n$$`;
   }
 
   fromMarkdown(markdown: string): this {
@@ -26,10 +29,10 @@ export class MathBlock extends Block<MathBlockSettings> {
     if (match && match[1]) {
       this.data = match[1].trim();
     } else {
-      this.data = markdown.replace(/^\$\$|\$\$$/g, "").trim();
+      this.data = markdown.replace(/^\$\$|\$\$$/g, '').trim();
     }
     return this;
   }
 }
 
-Block.registerSubclass("math", MathBlock);
+Block.registerSubclass('math', MathBlock);

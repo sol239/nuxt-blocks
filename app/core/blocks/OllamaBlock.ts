@@ -1,10 +1,13 @@
-import { Block } from "./Block";
-import { OllamaBlockSettings } from "./OllamaBlockSettings";
+import { Block } from './Block';
+import { OllamaBlockSettings } from './OllamaBlockSettings';
 
-const generateId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+const generateId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export class OllamaBlock extends Block<OllamaBlockSettings> {
-  readonly blockType = "ollama" as const;
+  readonly blockType = 'ollama' as const;
   blockSettings: OllamaBlockSettings;
 
   constructor(
@@ -14,11 +17,14 @@ export class OllamaBlock extends Block<OllamaBlockSettings> {
     settings?: Partial<OllamaBlockSettings> | null,
   ) {
     super(id, version, data);
-    this.blockSettings = Object.assign(new OllamaBlockSettings(), settings ?? {});
+    this.blockSettings = Object.assign(
+      new OllamaBlockSettings(),
+      settings ?? {},
+    );
   }
 
   toMarkdown(): string {
-    return this.data ?? "";
+    return this.data ?? '';
   }
 
   fromMarkdown(markdown: string): this {
@@ -27,4 +33,4 @@ export class OllamaBlock extends Block<OllamaBlockSettings> {
   }
 }
 
-Block.registerSubclass("ollama", OllamaBlock);
+Block.registerSubclass('ollama', OllamaBlock);
