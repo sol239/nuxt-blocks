@@ -20,6 +20,7 @@
 <script setup lang="ts">
 import katex from "katex";
 import "katex/dist/katex.min.css";
+import { highlightColor } from "~/core/blocks/textSpans";
 import type { RenderSpan } from "~/core/blocks/textSpans";
 
 defineProps<{
@@ -50,20 +51,43 @@ function getSpanClasses(span: RenderSpan): string[] {
   if (span.styles.includes("italic") || span.styles.includes("inverse")) classes.push("italic");
   if (span.styles.includes("underline")) classes.push("underline");
   if (span.styles.includes("strikethrough")) classes.push("line-through");
-  if (span.styles.includes("code")) classes.push("bg-gray-100 text-red-600 rounded");
+  if (span.styles.includes("code")) classes.push("rich-text-inline-code");
+  if (highlightColor(span.style)) classes.push("rich-text-highlight");
   return classes;
 }
 
 function getSpanStyles(span: RenderSpan): Record<string, string> {
   const styles: Record<string, string> = {};
-  if (span.color) {
+  if (span.styles.includes("code")) {
+    styles.color = "var(--inline-code-color, #e11d48)";
+  } else if (span.color) {
     styles.color = span.color;
   }
+  const highlight = highlightColor(span.style);
+  if (highlight) styles.backgroundColor = highlight;
   return styles;
 }
 </script>
 
 <style scoped>
+.rich-text-inline-code {
+  --inline-code-color: #e11d48;
+  background-color: #fff1f2;
+  border-radius: 0.2em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+:global(.dark) .rich-text-inline-code {
+  --inline-code-color: #fda4af;
+  background-color: rgb(136 19 55 / 0.25);
+}
+
+.rich-text-highlight {
+  border-radius: 0.3em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
 .rich-text-bold {
   -webkit-text-stroke: 0.45px currentColor;
   paint-order: stroke fill;

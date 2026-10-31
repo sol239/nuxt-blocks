@@ -1,13 +1,23 @@
 <template>
   <div
     ref="wrapper"
-    class="group relative py-2 pr-5 pl-5 transition-colors duration-150"
-    :class="{ 'bg-gray-100 rounded-lg': selected }"
+    class="group relative pr-5 pl-5 transition-colors duration-150"
+    :class="[blockSpacing[block?.blockType ?? 'paragraph'], { 'bg-gray-100 rounded-lg': selected }]"
     tabindex="0" :aria-label="block ? blockLabels[block.blockType ?? 'paragraph'] + ' block' : 'Block'"
     @keydown="shortcut"
     @focusout="onFocusOut">
     <!-- Trigger & Dropdown Menu Container -->
-    <div class="absolute -left-3 top-2 z-20">
+    <div v-if="editmodeactivated" class="absolute -left-6 top-2 z-20 flex items-center">
+      <button
+        type="button"
+        aria-label="Add block below"
+        title="Add block below (Ctrl + click to add above)"
+        class="block-actions flex size-5 items-center justify-center rounded text-gray-400 opacity-0 transition hover:bg-gray-200 hover:text-gray-700 focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100"
+        @mousedown.prevent
+        @click="$event.ctrlKey ? emit('add-before') : emit('add-after')"
+      >
+        <Icon name="material-symbols:add" class="size-4" aria-hidden="true" />
+      </button>
       <button
         ref="trigger"
         type="button"
@@ -15,7 +25,7 @@
         aria-haspopup="menu"
         :aria-expanded="open"
         :aria-controls="menuId"
-        class="block-actions flex size-7 items-center justify-center rounded text-gray-400 opacity-0 transition hover:bg-gray-200 hover:text-gray-700 focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100"
+        class="block-actions flex size-5 items-center justify-center rounded text-gray-400 opacity-0 transition hover:bg-gray-200 hover:text-gray-700 focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100"
         :class="{ 'opacity-100': open }"
         @click="toggleMenu"
         @keydown.down.prevent="showMenu"
@@ -37,6 +47,14 @@
         class="absolute left-0 z-20 min-w-48 rounded-lg border border-gray-200 bg-white p-1 text-left text-sm font-sans shadow-lg"
         :class="openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'"
       >
+        <div v-if="block?.blockType === 'web' && webControls" class="space-y-1 border-b border-gray-100 pb-2">
+          <button type="button" role="menuitem" class="w-full rounded px-3 py-2 text-left text-gray-700 hover:bg-gray-100" :aria-expanded="webControls.showSource" :aria-controls="webControls.sourceId" @click="webControls.toggleSource(); closeMenu()">{{ webControls.showSource ? 'Hide HTML' : 'Edit HTML' }}</button>
+          <button type="button" role="menuitem" class="w-full rounded px-3 py-2 text-left text-gray-700 hover:bg-gray-100" @click="webFileInput?.click()">Import HTML file</button>
+          <input ref="webFileInput" type="file" class="hidden" accept=".html,.htm,text/html" aria-label="Import HTML file" @change="webControls.importFile($event); closeMenu()">
+          <label class="flex items-center gap-2 px-3 py-2 text-xs text-gray-600">Preview height <input data-control-size="field" type="number" aria-label="Preview height" class="w-20 rounded border border-gray-200 px-2 py-1" min="160" max="1600" step="1" :value="webControls.height" @change="webControls.resize"> px</label>
+          <button type="button" role="menuitem" class="w-full rounded px-3 py-2 text-left text-gray-700 hover:bg-gray-100" @click="webControls.run(); closeMenu()">Run HTML</button>
+          <button v-if="webControls.running" type="button" role="menuitem" class="w-full rounded px-3 py-2 text-left text-gray-700 hover:bg-gray-100" @click="webControls.stop(); closeMenu()">Stop</button>
+        </div>
         <!-- Alignment -->
         <div class="px-2 py-1.5">
           <p class="mb-1 text-xs font-medium text-gray-500">Alignment</p>
@@ -95,7 +113,7 @@
               @click.stop="turnInto(type)"
             >
               <span class="flex items-center gap-2">
-                <Icon :name="getBlockIcon(type)" class="size-4 text-gray-500" />
+                <BlockTypeIcon :type="type" class="size-4 text-gray-500" />
                 <span>{{ blockLabels[type] }}</span>
               </span>
               <Icon
@@ -118,8 +136,9 @@
       </div>
     </div>
 
-    <Icon
-      :name="getBlockIcon(block?.blockType)"
+    <BlockTypeIcon
+      v-if="editmodeactivated"
+      :type="block?.blockType ?? 'paragraph'"
       class="block-type-icon absolute -right-3 top-3 size-5 text-gray-400 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
       :aria-label="`${blockLabels[block?.blockType ?? 'paragraph']} block type`"
       :title="blockLabels[block?.blockType ?? 'paragraph']"
@@ -137,23 +156,60 @@
   </div>
 </template>
 <script setup lang="ts">
-import { Block, type BlockType } from "~/core/blocks/Block";
+import BlockTypeIcon from "./BlockTypeIcon.vue";
+import { WEB_BLOCK_CONTROLS, type WebBlockControls } from '../composables/useWebBlockControls';
+import { tableFromMarkdown } from '../core/blocks/tableData';
+import { useAiBlocks } from "../composables/useAiBlocks";
+import { useNotebookCreator } from '../composables/useNotebookCreator';
+import type { Block, BlockType } from "~/core/blocks/Block";
 import type { BlockAllignment } from "~/core/blocks/IBlockSettings";
-import { blockLabels, blockIcons, createBlock } from "~/core/blocks/registry";
+import { blockLabels, initialBlockData, createBlock } from "~/core/blocks/registry";
 import { stripMarker, normalizeMarkedText, type MarkedKind } from "~/core/blocks/markedText";
 import { useBlocksConfig } from "~/composables/useBlocksConfig";
+
+const blockSpacing: Record<BlockType, string> = {
+  notebook: 'py-1',
+  ollama: 'py-2',
+  codex: 'py-2',
+  antigravity: 'py-2',
+  paragraph: 'py-1',
+  todo: 'py-1',
+  table: 'py-1',
+  markdown: 'py-1',
+  interactive: 'py-1',
+  web: 'py-1',
+  heading1: 'py-2 mb-4',
+  heading2: 'py-2 mb-3',
+  heading3: 'py-2 mb-2',
+  divider: 'py-1',
+  bulletedList: 'py-1',
+  numberedList: 'py-1',
+  quote: 'py-1',
+  link: 'py-1',
+  image: 'py-1',
+  video: 'py-1',
+  audio: 'py-1',
+  code: 'py-1',
+  math: 'py-1',
+  drawing: 'py-1',
+};
 
 const props = withDefaults(
   defineProps<{
     block?: Block;
     selected?: boolean;
+    editmodeactivated?: boolean;
   }>(),
   {
     selected: false,
+    editmodeactivated: true,
   },
 );
 
-const emit = defineEmits<{ "update:block": [value: Block]; "add-after": []; delete: [] }>();
+const emit = defineEmits<{ "update:block": [value: Block]; "add-after": []; "add-before": []; delete: [] }>();
+const webControls = shallowRef<WebBlockControls | null>(null);
+const webFileInput = ref<HTMLInputElement>();
+provide(WEB_BLOCK_CONTROLS, webControls);
 const wrapper = ref<HTMLElement>();
 const trigger = ref<HTMLButtonElement>();
 const deleteButton = ref<HTMLButtonElement>();
@@ -166,10 +222,6 @@ const openUpwards = ref(false);
 const submenuOpenUpwards = ref(false);
 const menuId = useId();
 let emptyBackspaceCount = 0;
-
-function getBlockIcon(type: BlockType | null | undefined): string {
-  return blockIcons[type ?? "paragraph"];
-}
 
 const alignments: Array<{ value: BlockAllignment; icon: string }> = [
   { value: "left", icon: "material-symbols:format-align-left" },
@@ -217,10 +269,17 @@ function hasEmptyEditableData() {
 }
 
 const config = useBlocksConfig();
+const notebookCreator = useNotebookCreator();
+const aiBlocks = useAiBlocks();
 
 const availableBlockTypes = computed<BlockType[]>(() => {
   const types: BlockType[] = [
     "paragraph",
+    "table",
+    "todo",
+    "markdown",
+    "interactive",
+    "web",
     "heading1",
     "heading2",
     "heading3",
@@ -240,6 +299,8 @@ const availableBlockTypes = computed<BlockType[]>(() => {
     types.push("drawing");
   }
 
+  if (notebookCreator) types.push("notebook");
+  if (aiBlocks) types.push("ollama", "codex", "antigravity");
   types.push("link", "image", "video", "audio");
   return types;
 });
@@ -268,7 +329,7 @@ function turnInto(targetType: BlockType) {
   }
 
   const currentType = props.block.blockType ?? "paragraph";
-  let rawText = props.block.data ?? "";
+  let rawText = props.block.blockType === "table" ? props.block.toMarkdown() : props.block.data ?? "";
 
   // If current block is a marked list or quote, strip markers to keep the actual text content
   if (currentType === "bulletedList" || currentType === "numberedList" || currentType === "quote") {
@@ -283,7 +344,9 @@ function turnInto(targetType: BlockType) {
   }
 
   let newData = rawText;
-  if (targetType === "bulletedList") {
+  if (targetType === "todo") {
+    newData = rawText ? `### To do\n${rawText.split("\n").map(line => `- [ ] ${line}`).join("\n")}` : initialBlockData("todo");
+  } else if (targetType === "bulletedList") {
     newData = rawText ? normalizeMarkedText(rawText, "bulletedList") : "- ";
   } else if (targetType === "numberedList") {
     newData = rawText ? normalizeMarkedText(rawText, "numberedList") : "1. ";
@@ -291,6 +354,13 @@ function turnInto(targetType: BlockType) {
     newData = rawText ? normalizeMarkedText(rawText, "quote") : "> ";
   } else if (targetType === "divider") {
     newData = "---";
+  } else if (targetType === "web") {
+    newData = rawText || initialBlockData("web");
+  } else if (targetType === "table") {
+    try { newData = JSON.stringify(tableFromMarkdown(rawText)); }
+    catch { newData = initialBlockData("table"); }
+  } else if (targetType === "interactive") {
+    newData = initialBlockData("interactive");
   } else if (targetType === "drawing") {
     newData = JSON.stringify({ strokes: [] });
   }
@@ -298,9 +368,9 @@ function turnInto(targetType: BlockType) {
   // Determine appropriate font size for target block
   let fontSize: number | undefined;
   if (textBlockTypes.has(targetType)) {
-    if (targetType === "heading1") fontSize = 36;
-    else if (targetType === "heading2") fontSize = 28;
-    else if (targetType === "heading3") fontSize = 22;
+    if (targetType === "heading1") fontSize = 28;
+    else if (targetType === "heading2") fontSize = 24;
+    else if (targetType === "heading3") fontSize = 20;
     else fontSize = 16;
   }
 
@@ -353,6 +423,11 @@ function showMenu() {
     deleteButton.value?.focus();
   });
 }
+function closeMenu() {
+  open.value = false;
+  turnIntoOpen.value = false;
+  nextTick(() => trigger.value?.focus());
+}
 function toggleMenu() {
   if (open.value) {
     open.value = false;
@@ -367,9 +442,18 @@ function removeBlock() {
   open.value = false;
   turnIntoOpen.value = false;
   emit("delete");
-  nextTick(() => {
-    const target = next ?? previous;
-    (target?.querySelector<HTMLElement>("textarea, input, select, button") ?? target)?.focus();
+  nextTick(async () => {
+    const target = previous ?? next;
+    const field = target?.querySelector<HTMLTextAreaElement | HTMLInputElement>('textarea, input[type="text"], input[type="url"], input:not([type])');
+    if (field) {
+      if (!field.getClientRects().length) {
+        field.parentElement?.click();
+        await nextTick();
+      }
+      field.focus();
+      const position = previous ? field.value.length : 0;
+      field.setSelectionRange(position, position);
+    } else target?.focus();
   });
 }
 function onOutsideClick(event: PointerEvent) {
@@ -406,6 +490,13 @@ onBeforeUnmount(() => {
   window.removeEventListener("scroll", onViewportChange, true);
 });
 function shortcut(event: KeyboardEvent) {
+  if (!props.editmodeactivated) return;
+  if (event.key === "Enter" && event.ctrlKey && !event.altKey && !event.metaKey && !event.isComposing) {
+    event.preventDefault();
+    event.stopPropagation();
+    emit("add-before");
+    return;
+  }
   if (event.key === "Backspace" && !event.repeat && !event.altKey && !event.ctrlKey && !event.metaKey && hasEmptyEditableData()) {
     emptyBackspaceCount += 1;
     if (emptyBackspaceCount === 2) {
@@ -428,7 +519,9 @@ function shortcut(event: KeyboardEvent) {
     }
     return;
   }
-  if (event.altKey && event.key === "Enter" && !event.ctrlKey && !event.metaKey && !event.isComposing) {
+  const target = event.target as HTMLElement;
+  const textBlock = ["paragraph", "heading1", "heading2", "heading3", "bulletedList", "numberedList", "quote"].includes(props.block?.blockType ?? "paragraph");
+  if (textBlock && target.tagName === "TEXTAREA" && !event.defaultPrevented && !event.altKey && event.key === "Enter" && !event.ctrlKey && !event.metaKey && !event.isComposing) {
     event.preventDefault();
     event.stopPropagation();
     emit("add-after");

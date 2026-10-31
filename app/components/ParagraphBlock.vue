@@ -1,11 +1,11 @@
 <template>
-  <div ref="containerRef" class="relative w-full">
+  <div ref="containerRef" class="relative w-full" @paste="onPaste" @focusout="onFocusOut">
     <RichTextEditor
       ref="editorRef"
       :block="block"
       placeholder="Start writing…"
       aria-label="Paragraph"
-      class="leading-7 text-gray-700"
+      class="leading-7 text-gray-900 dark:text-gray-100"
       @update:block="handleUpdateBlock"
       @keydown="handleKeydown"
     />
@@ -38,7 +38,7 @@
           @click="selectOption(type)"
         >
           <span class="flex items-center gap-2">
-            <Icon :name="blockIcons[type]" class="size-4 text-gray-500" />
+            <BlockTypeIcon :type="type" class="size-4 text-gray-500" />
             <span>{{ blockLabels[type] }}</span>
           </span>
         </button>
@@ -51,11 +51,15 @@
 </template>
 
 <script setup lang="ts">
+import BlockTypeIcon from "./BlockTypeIcon.vue";
+import { useAiBlocks } from "../composables/useAiBlocks";
+import { useNotebookCreator } from '../composables/useNotebookCreator';
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from "vue";
 import type { Block, BlockType } from "~/core/blocks/Block";
-import { blockLabels, blockIcons, createBlock } from "~/core/blocks/registry";
+import { blockLabels, initialBlockData, createBlock } from "~/core/blocks/registry";
 import { normalizeMarkedText } from "~/core/blocks/markedText";
 import { useBlocksConfig } from "~/composables/useBlocksConfig";
+import { safeUrl } from "~/core/blocks/media";
 import RichTextEditor from "./RichTextEditor.vue";
 
 const props = defineProps<{
@@ -64,6 +68,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:block": [value: Block];
+  "add-after": [];
 }>();
 
 const containerRef = ref<HTMLElement>();
@@ -78,9 +83,16 @@ const closedExplicitly = ref(false);
 const openUpwards = ref(false);
 
 const config = useBlocksConfig();
+const notebookCreator = useNotebookCreator();
+const aiBlocks = useAiBlocks();
 
 const availableBlockTypes = computed<BlockType[]>(() => {
   const types: BlockType[] = [
+    "table",
+    "todo",
+    "markdown",
+    "interactive",
+    "web",
     "heading1",
     "heading2",
     "heading3",
@@ -100,6 +112,8 @@ const availableBlockTypes = computed<BlockType[]>(() => {
     types.push("drawing");
   }
 
+  if (notebookCreator) types.push("notebook");
+  if (aiBlocks) types.push("ollama", "codex", "antigravity");
   types.push("link", "image", "video", "audio");
   return types;
 });
@@ -137,6 +151,8 @@ function handleUpdateBlock(updatedBlock: Block) {
   const oldText = props.block.data ?? "";
   const newText = updatedBlock.data ?? "";
 
+  if (convertMarkdownParagraph(updatedBlock)) return;
+
   // Always emit the typing update so the block stays in sync
   emit("update:block", updatedBlock);
 
@@ -157,6 +173,67 @@ function handleUpdateBlock(updatedBlock: Block) {
   } else if (!isOpen.value) {
     closedExplicitly.value = false;
   }
+}
+
+function convertMarkdownParagraph(updatedBlock: Block): boolean {
+  const text = updatedBlock.data ?? "";
+  const type = text.trim() === "---" ? "divider"
+    : /^-[ \t]+\S/.test(text) ? "bulletedList"
+    : /^\d+\.[ \t]+\S/.test(text) ? "numberedList"
+    : null;
+  if (!type) return false;
+
+  const field = editorRef.value?.textarea;
+  const start = field?.selectionStart ?? text.length;
+  const end = field?.selectionEnd ?? start;
+  const parent = containerRef.value?.parentElement;
+  isOpen.value = false;
+  emit("update:block", createBlock(
+    type, updatedBlock.id, updatedBlock.version,
+    type === "divider" ? "---" : text,
+    { ...updatedBlock.blockSettings },
+  ));
+
+  if (type === "divider") {
+    emit("add-after");
+    return true;
+  }
+
+  nextTick(async () => {
+    const target = parent?.querySelector<HTMLTextAreaElement>("textarea");
+    if (target) {
+      // List editors start in rendered mode; reveal their textarea before focusing.
+      target.parentElement?.click();
+      await nextTick();
+      target.focus();
+      target.setSelectionRange(start, end);
+    } else parent?.closest<HTMLElement>("[tabindex='0']")?.focus();
+  });
+  return true;
+}
+
+function convertUrlParagraph(text: string): boolean {
+  const trimmed = text.trim();
+  const value = trimmed.match(/^\[[^\]\n]*\]\((https?:\/\/[^\s]+)\)$/i)?.[1] ?? trimmed;
+  if (/\s/.test(value) || !/^https?:\/\//i.test(value) || !safeUrl(value)) return false;
+  isOpen.value = false;
+  emit("update:block", createBlock("link", props.block.id, props.block.version, value));
+  return true;
+}
+
+function onPaste(event: ClipboardEvent) {
+  const field = event.target;
+  if (!(field instanceof HTMLTextAreaElement) || !event.clipboardData) return;
+  const text = field.value.slice(0, field.selectionStart)
+    + event.clipboardData.getData("text/plain")
+    + field.value.slice(field.selectionEnd);
+  if (convertUrlParagraph(text)) event.preventDefault();
+}
+
+function onFocusOut(event: FocusEvent) {
+  const related = event.relatedTarget as HTMLElement | null;
+  if (related?.closest('[role="toolbar"]') || containerRef.value?.contains(related)) return;
+  if (event.target instanceof HTMLTextAreaElement) convertUrlParagraph(event.target.value);
 }
 
 function handleKeydown(event: KeyboardEvent) {
@@ -250,7 +327,9 @@ function selectOption(targetType: BlockType) {
   const rawText = stripSlashCommand(props.block.data ?? "");
 
   let newData = rawText;
-  if (targetType === "bulletedList") {
+  if (targetType === "todo") {
+    newData = rawText ? `### To do\n${rawText.split("\n").map(line => `- [ ] ${line}`).join("\n")}` : initialBlockData("todo");
+  } else if (targetType === "bulletedList") {
     newData = rawText ? normalizeMarkedText(rawText, "bulletedList") : "- ";
   } else if (targetType === "numberedList") {
     newData = rawText ? normalizeMarkedText(rawText, "numberedList") : "1. ";
@@ -258,6 +337,12 @@ function selectOption(targetType: BlockType) {
     newData = rawText ? normalizeMarkedText(rawText, "quote") : "> ";
   } else if (targetType === "divider") {
     newData = "---";
+  } else if (targetType === "web") {
+    newData = rawText || initialBlockData("web");
+  } else if (targetType === "table") {
+    newData = initialBlockData("table");
+  } else if (targetType === "interactive") {
+    newData = initialBlockData("interactive");
   } else if (targetType === "drawing") {
     newData = JSON.stringify({ strokes: [] });
   }

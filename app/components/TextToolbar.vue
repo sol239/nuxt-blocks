@@ -9,7 +9,9 @@
   >
     <div
       v-if="visible"
-      class="fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-3rem)] max-w-4xl -translate-x-1/2 items-center justify-between rounded-2xl border border-gray-200 bg-white/95 px-4 py-2 shadow-xl backdrop-blur-sm"
+      ref="toolbarElement"
+      :style="toolbarPosition"
+      class="fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-3rem)] max-w-6xl -translate-x-1/2 flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white/95 px-4 py-2 shadow-xl backdrop-blur-sm"
       role="toolbar"
       aria-label="Text formatting"
       @mousedown="onToolbarMouseDown"
@@ -102,6 +104,18 @@
           >
             <Icon name="material-symbols:function" class="size-5" />
           </button>
+          <button
+            type="button"
+            class="toolbar-button"
+            :class="{ 'toolbar-button-active': isHighlighted }"
+            :aria-pressed="isHighlighted"
+            aria-label="Highlight text"
+            title="Highlight text"
+            @mousedown.prevent
+            @click="onHighlightToggle"
+          >
+            <Icon name="material-symbols:ink-highlighter" class="size-5" />
+          </button>
         </div>
 
         <!-- Vertical divider between formatting buttons and typography -->
@@ -167,6 +181,26 @@
             <span class="text-[10px] text-gray-400 select-none">px</span>
           </div>
         </div>
+      </div>
+
+      <div v-if="isHighlighted" class="flex items-center gap-2" role="group" aria-label="Highlight color">
+        <span class="text-xs font-medium text-gray-400 select-none">Highlight:</span>
+        <button
+          v-for="color in highlightColors" :key="color.value"
+          type="button"
+          :aria-label="`${color.label} highlight`"
+          :title="`${color.label} highlight`"
+          :aria-pressed="selectedHighlight === color.value"
+          class="flex size-7 items-center justify-center rounded-lg transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-blue-500"
+          :class="selectedHighlight === color.value ? 'ring-2 ring-blue-500 ring-offset-2' : ''"
+          :style="{ backgroundColor: color.value }"
+          @mousedown.prevent
+          @click="onHighlightColor(color.value)"
+        ><Icon v-if="selectedHighlight === color.value" name="material-symbols:check" class="size-4 text-gray-800" /></button>
+        <label class="relative flex size-7 cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300" title="Custom highlight color">
+          <Icon name="material-symbols:colorize" class="size-4 text-gray-500" />
+          <input type="color" aria-label="Custom highlight color" :value="selectedHighlight" class="sr-only" @input="onHighlightColor(($event.target as HTMLInputElement).value)" @change="restoreBlockFocus">
+        </label>
       </div>
 
       <!-- Right: Color selector (centered right) -->
@@ -272,10 +306,34 @@
 <script setup lang="ts">
 import { nextTick } from "vue";
 import { storeToRefs } from "pinia";
-import { useTypingStore } from "~/stores/useTypingStore";
+import { useTypingStore, type TypingFormat } from "~/stores/useTypingStore";
 import type { Block } from "~/core/blocks/Block";
-import { applyStyleToRange, applyColorToRange, type KnownStyle } from "~/core/blocks/textSpans";
+import { applyStyleToRange, applyColorToRange, applyHighlightToRange } from "~/core/blocks/textSpans";
 import { useBlocksConfig } from "~/composables/useBlocksConfig";
+
+const toolbarElement = ref<HTMLElement | null>(null);
+const toolbarPosition = ref<Record<string, string>>({});
+let editorObserver: ResizeObserver | null = null;
+
+function alignToolbar() {
+  const editor = toolbarElement.value?.parentElement;
+  if (!editor) return;
+  const bounds = editor.getBoundingClientRect();
+  toolbarPosition.value = {
+    left: `${bounds.left + bounds.width / 2}px`,
+    width: `${Math.max(0, bounds.width - 48)}px`,
+  };
+}
+
+watch(toolbarElement, (element) => {
+  editorObserver?.disconnect();
+  if (!element?.parentElement) return;
+  alignToolbar();
+  editorObserver = new ResizeObserver(alignToolbar);
+  editorObserver.observe(element.parentElement);
+  const shell = element.closest('main');
+  if (shell) editorObserver.observe(shell);
+}, { flush: 'post' });
 
 const config = useBlocksConfig();
 
@@ -321,6 +379,8 @@ function isLightColor(hexColor: string): boolean {
 
 const typingStore = useTypingStore();
 const {
+  isHighlighted,
+  selectedHighlight,
   isBold,
   isItalic,
   isUnderlined,
@@ -328,6 +388,35 @@ const {
   isCode,
   isMath,
 } = storeToRefs(typingStore);
+
+const highlightColors = [
+  { label: "Pastel yellow", value: "#fef08a" },
+  { label: "Pastel pink", value: "#fbcfe8" },
+  { label: "Pastel mint", value: "#bbf7d0" },
+  { label: "Pastel blue", value: "#bfdbfe" },
+  { label: "Pastel lavender", value: "#e9d5ff" },
+];
+
+function applyHighlight(color?: string) {
+  const range = typingStore.selectionRange;
+  if (props.block && range && range.start < range.end) {
+    emit("update:block", props.block.withSettings({
+      ...props.block.blockSettings,
+      styles: applyHighlightToRange(props.block.blockSettings?.styles ?? [], (props.block.data ?? "").length, range.start, range.end, color),
+    }));
+  }
+  restoreBlockFocus();
+  nextTick(restoreBlockFocus);
+}
+function onHighlightToggle() {
+  typingStore.isHighlighted = !typingStore.isHighlighted;
+  applyHighlight(typingStore.isHighlighted ? typingStore.selectedHighlight : undefined);
+}
+function onHighlightColor(color: string) {
+  typingStore.selectedHighlight = color;
+  typingStore.isHighlighted = true;
+  applyHighlight(color);
+}
 
 function onToolbarMouseDown(event: MouseEvent) {
   // Prevent focus stealing for anything other than selects and inputs
@@ -358,7 +447,7 @@ function restoreBlockFocus() {
   }
 }
 
-function onFormatClick(format: KnownStyle) {
+function onFormatClick(format: TypingFormat) {
   if (format === "math" && !config.mathAllowed) {
     return;
   }
@@ -389,7 +478,7 @@ function onFormatClick(format: KnownStyle) {
       end,
     );
   } else {
-    typingStore.toggle(format as any);
+    typingStore.toggle(format);
   }
 
   restoreBlockFocus();
@@ -535,6 +624,10 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
   if ((!event.ctrlKey && !event.metaKey) || event.altKey) {
     return;
   }
+  if (event.repeat) {
+    if (["b", "i", "u", "x", "e", "m"].includes(event.key.toLowerCase())) event.preventDefault();
+    return;
+  }
 
   const key = event.key.toLowerCase();
 
@@ -559,10 +652,15 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
 }
 
 onMounted(() => {
+  window.addEventListener("resize", alignToolbar);
+  window.addEventListener("scroll", alignToolbar, true);
   document.addEventListener("keydown", handleKeyboardShortcut);
   document.addEventListener("pointerdown", onFontPointerDown);
 });
 onUnmounted(() => {
+  editorObserver?.disconnect();
+  window.removeEventListener("resize", alignToolbar);
+  window.removeEventListener("scroll", alignToolbar, true);
   document.removeEventListener("keydown", handleKeyboardShortcut);
   document.removeEventListener("pointerdown", onFontPointerDown);
 });

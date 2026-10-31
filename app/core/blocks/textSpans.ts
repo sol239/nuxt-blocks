@@ -404,3 +404,27 @@ export function buildRenderSpans(
   return merged;
 }
 
+
+/** Highlight colors live in style spans so all existing editing and persistence
+ * paths preserve their ranges alongside bold, math, and other inline styles. */
+export function highlightColor(style: string): string | undefined {
+  return style.split(/\s+/).find(token => /^highlight:#[0-9a-f]{6}$/i.test(token))?.slice(10);
+}
+
+export function applyHighlightToRange(
+  spans: StyleSpan[], textLength: number, start: number, end: number, color?: string,
+): StyleSpan[] {
+  if (start >= end || textLength <= 0) return spans;
+  const normalized = normalizeStyleSpans(spans, textLength);
+  const result: StyleSpan[] = [];
+  for (const span of normalized) {
+    const from = Math.max(span.start, start), to = Math.min(span.end, end);
+    if (from >= to) { result.push(span); continue; }
+    if (span.start < from) result.push({ ...span, end: from });
+    const tokens = span.style.split(/\s+/).filter(token => token !== 'normal' && !token.startsWith('highlight:'));
+    if (color && /^#[0-9a-f]{6}$/i.test(color)) tokens.push(`highlight:${color.toLowerCase()}`);
+    result.push({ start: from, end: to, style: tokens.join(' ') || 'normal' });
+    if (to < span.end) result.push({ ...span, start: to });
+  }
+  return normalizeStyleSpans(result, textLength);
+}

@@ -66,7 +66,7 @@ Each block type has its own concrete class extending `Block` (`app/core/blocks/b
 
 ## 3. Rich Text Formatting & Span Architecture
 
-Located in `app/core/blocks/textSpans.ts`. Text blocks (`paragraph`, `heading1`, `heading2`, `heading3`, `bulletedList`, `numberedList`, `quote`) support inline formatting and text coloring via compact range-based spans.
+Located in `app/core/blocks/textSpans.ts`. Text blocks (`paragraph`, `heading1`, `heading2`, `heading3`, `bulletedList`, `numberedList`, `quote`) support inline formatting, text coloring, and rounded highlights via compact range-based spans. Highlight colors are stored as `highlight:#rrggbb` tokens in `StyleSpan.style`; this preserves them through existing immutable block updates, JSON persistence, and text reconciliation. Use `applyHighlightToRange` to recolor/remove highlights while preserving other styles, and `highlightColor` to read them.
 
 ### 3.1 Data Structures
 ```ts
@@ -137,9 +137,10 @@ flowchart TD
    - Positioned fixed at bottom center of the editor (`z-50`).
    - Visible only when a text-editable block is focused.
    - **Button Layout**:
-     - Left: Formatting buttons in order: **Bold** (`Ctrl+B`), **Italic** (`Ctrl+I`), **Underline** (`Ctrl+U`), **Strikethrough** (`Ctrl+Shift+X`), **Code** (`Ctrl+E`), **Math** (`Ctrl+M`, KaTeX inline math).
+     - Left: Formatting buttons in order: **Bold** (`Ctrl+B`), **Italic** (`Ctrl+I`), **Underline** (`Ctrl+U`), **Strikethrough** (`Ctrl+Shift+X`), **Code** (`Ctrl+E`), **Math** (`Ctrl+M`, KaTeX inline math), **Highlight text**.
      - Divider: Vertical line.
      - Typography: Font family dropdown (`<select>`), Font size input (`<input type="number">`).
+     - Middle: Highlight color picker (visible while highlighting is active), with pastel yellow, pink, mint, blue, lavender, and a custom color input. Highlight backgrounds have rounded corners and do not add padding that shifts textarea selection geometry.
      - Right: Centered color picker with presets (Black, Blue, Red, Green), custom color button, and color picker trigger (`<input type="color">`).
 
 ---
@@ -214,3 +215,95 @@ flowchart TD
    4. Create Vue component in `app/components/<Name>Block.vue` accepting `block: Block` and emitting `update:block`.
    5. Register component and icon in `BlockWrapper.vue` and `registry.ts`.
    6. Add unit/E2E coverage in `tests/blocks.spec.ts`.
+
+## Notebook creation blocks
+
+`notebook` is a transient block type with its own `NotebookBlock` class and
+`NotebookBlockSettings`. A host can provide `NOTEBOOK_CREATOR_KEY` from
+`composables/useNotebookCreator.ts`. The callback receives the source block ID
+and notebook name and returns an HTTP(S) URL. With that provider present, Notebook
+appears in the slash and turn-into menus. On mount it creates the notebook, then
+emits a new `LinkBlock` preserving the source ID, version, and alignment. Failures
+retain the Notebook block and offer Retry; the host must make creation idempotent
+by source block ID. Hosts may also provide `NOTEBOOK_CREATED_KEY` to open the
+new notebook. NotebookBlock invokes it after emitting the replacement link and
+waiting for the Vue update; host navigation must flush the source editor before
+leaving. The library does not depend on any application's notebook API.
+
+## Native tables
+
+`table` uses `TableBlock`, `TableBlockSettings`, and `TableBlock.vue`. Data is a
+JSON string with `header: string[]`, `rows: string[][]`, and an `align` entry per
+column (`null`, `left`, `center`, or `right`). Cells contain inline Markdown.
+Use `tableData.ts` for validation and Markdown import/export. Cell edits and row
+or column changes emit immutable `withData` updates. Markdown imports and AI
+generation convert GFM tables into this type, including tables returned inside
+an explicit Markdown block. Keep `table` in the server notebook and task block
+allowlists. Clipboard text uses tab-separated cells; Markdown export uses GFM.
+
+## Mermaid code blocks
+
+Mermaid remains a `code` block with `blockSettings.language = "mermaid"`, not a
+separate block type. `CodeBlock.vue` switches between Monaco (plaintext for this
+language) and `MermaidPreview.vue`. `renderMermaid.ts` lazily imports Mermaid and
+serializes renders because its configuration is global. Keep securityLevel strict,
+startOnLoad disabled, and SVG error rendering suppressed. Preview renders use
+unique IDs, ignore stale asynchronous results, follow theme changes, and retain
+source on errors. Export continues to use ordinary mermaid Markdown fences.
+
+## Web block Tailwind
+
+WebBlock bundles @tailwindcss/browser as raw script text and passes it to
+`buildWebPreview`. It runs inside the opaque-origin iframe, without a CDN request.
+Keep the sandbox and CSP restrictions intact; escape closing script tags in the
+runtime. Utilities, dynamic class changes and `style type="text/tailwindcss"`
+customizations are supported. Keep the runtime out of stored block data/export.
+
+Web preview chrome belongs to BlockWrapper. Each wrapper provides its own
+`WEB_BLOCK_CONTROLS` shallow ref; its WebBlock registers controls on mount and
+unregisters on unmount. Keep this channel scoped per wrapper, with no global
+state. The WebBlock renders a frameless iframe and optional source/status only;
+edit/import/height/restart/stop controls live in the wrapper menu.
+
+Drag selection anchors and endpoints use canvas-local coordinates. Convert the
+last pointer position and wrapper rectangles against the current canvas bounds
+on both mouse movement and captured ancestor scroll events. The fixed overlay
+converts back to viewport coordinates. Keep the anchor unchanged while scrolling
+and remove temporary scroll listeners on mouseup and unmount.
+
+## Antigravity generator
+
+`antigravity` has AntigravityBlock and AntigravityBlockSettings and uses AiBlock,
+with independent model/effort preferences. Keep it in notebook/task server type
+allowlists. Host AI integrations may supply `AiBlocks.icons.antigravity`;
+BlockTypeIcon displays that image in slash/turn-into menus and the wrapper.
+The block library remains independent of the host plugin's asset paths.
+
+## Canvas edit mode
+
+`BlockCanvas` accepts `canvasType: 'default' | 'a4'` (default `'default'`).
+Default keeps the fluid, unlimited canvas. A4 renders 794 × 1123 CSS-pixel
+pages (210 × 297 mm rounded at 96 DPI) with 40px vertical and 48px horizontal
+padding and 24px gaps. `BlockCanvasLayout` measures content and reacts to editor,
+font and media size changes. `a4Pagination.ts` creates presentation-only text/code
+fragments; fragment edits merge into the original block and preserve source IDs,
+other page content and span offsets. Code line numbers continue across pages.
+Other block types use clipped viewports of their full rendered content.
+Never persist page fragments as separate records. `BlockPageFragment` supplies
+source selection offsets to rich-text editors; the layout restores caret positions
+after reflow. Drag-selection coordinates include the canvas's own scroll offsets.
+Only notebook detail secondary space offers the Canvas selector. That host
+stores the preference per notebook in browser storage; other canvas hosts
+omit the prop and keep the default layout.
+
+`BlockCanvas` accepts `editmodeactivated: boolean` (default `true`). When false,
+use `BlockReadView` instead of mounting editable components, hide wrapper actions/type icons
+and add/selection controls, and reject canvas mutation events and paste/delete
+shortcuts. Reset focus, selection and drag state when the mode changes. Reading
+must preserve rich text, code, math and media without exposing editing controls.
+The notebook host shares `notebooks-edit-mode` state between its primary canvas
+and the Edit mode switch beside Show nodes in secondary space.
+
+Read views reuse LinkBlock with readOnly to preserve project previews and navigation,
+and CodeBlock with readOnly/domReadOnly for the same syntax colors and layout.
+Hide language editing, formatting and link editing controls in read mode.

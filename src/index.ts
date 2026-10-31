@@ -13,3 +13,11 @@ export * from "../app/composables/useBlocksConfig";
 
 // Nuxt Module definition
 export { default as default, type ModuleOptions } from "./module";
+
+export * from "../app/core/blocks/interactiveData";
+export * from "../app/core/blocks/InteractiveBlockSettings";
+
+export * from "../app/core/blocks/interactiveExperience";
+
+export * from "../app/core/blocks/WebBlockSettings";
+export * from "../app/core/blocks/webPreview";

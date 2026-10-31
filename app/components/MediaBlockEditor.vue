@@ -8,7 +8,8 @@
       <!-- URL / file row -->
       <div class="flex items-center gap-2">
         <input
-          ref="urlInput"
+ref="urlInput"
+          data-control-size="field"
           type="url"
           :aria-label="kind + ' URL or file name'"
           :placeholder="urlPlaceholder"
@@ -21,6 +22,7 @@
         >
         <!-- Choose file button -->
         <button
+data-control-size="icon"
           type="button"
           :aria-label="`Open ${kind} file`"
           title="Choose file"
@@ -43,7 +45,8 @@
         >
         <!-- Done button (when source is present) -->
         <button
-          v-if="source"
+v-if="source"
+          data-control-size="icon"
           type="button"
           title="Done editing"
           aria-label="Done editing"
@@ -60,6 +63,7 @@
       <label v-if="kind === 'image'" class="flex items-center gap-2 text-sm text-gray-600">
         Alt text
         <input
+data-control-size="field"
           :value="imageSettings.alt"
           placeholder="Describe the image"
           class="ml-1 min-w-0 flex-1 rounded border border-gray-200 px-2 py-1 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
@@ -73,6 +77,7 @@
         <label class="flex items-center gap-1 text-xs">
           W:
           <input
+data-control-size="field"
             type="number"
             min="20"
             max="3000"
@@ -86,6 +91,7 @@
         <label class="flex items-center gap-1 text-xs">
           H:
           <input
+data-control-size="field"
             type="number"
             min="20"
             max="3000"
@@ -97,7 +103,8 @@
           <span class="text-[10px] text-gray-400">px</span>
         </label>
         <button
-          v-if="resizableSettings.width || resizableSettings.height"
+v-if="resizableSettings.width || resizableSettings.height"
+          data-control-size="icon"
           type="button"
           class="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
           @click="setSettings({ width: undefined, height: undefined })"
@@ -136,6 +143,7 @@
       >
         <!-- Edit button to re-open URL/file input -->
         <button
+data-control-size="icon"
           type="button"
           title="Edit media"
           aria-label="Edit media"
@@ -229,7 +237,6 @@ let uploadVersion = 0;
 
 const settings = computed(() => props.block.blockSettings as MediaSettings);
 const imageSettings = computed(() => settings.value as ImageBlockSettings);
-const playbackSettings = computed(() => settings.value as VideoBlockSettings | AudioBlockSettings);
 const resizableSettings = computed(() => props.block.blockSettings as ResizableMediaSettings);
 
 const source = computed(() =>

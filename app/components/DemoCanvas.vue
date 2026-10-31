@@ -23,6 +23,7 @@
 import { ref, computed, nextTick } from "vue";
 import { Block, type BlockType } from "~/core/blocks/Block";
 import {
+  InteractiveBlock,
   createBlock,
   initialBlockData,
   Heading1Block,
@@ -123,6 +124,7 @@ const demoBlocks: Block[] = [
     1,
     "The Czech story continued through religious reform, Habsburg rule, industrial growth, independence, occupation, communism, and democratic renewal. Its history is not confined to museums—it remains present in town squares, family traditions, literature, music, and everyday life.",
   ),
+  new InteractiveBlock("example-interactive"),
   new DividerBlock("example-divider", 1, "---"),
   new BulletedListBlock(
     "example-bulleted-list",

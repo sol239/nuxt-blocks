@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { StyleSpan, ColorSpan, KnownStyle } from "~/core/blocks/textSpans";
+import { highlightColor } from "~/core/blocks/textSpans";
+import type { StyleSpan, ColorSpan } from "~/core/blocks/textSpans";
 
 export type TypingFormat =
   | "bold"
@@ -20,6 +21,9 @@ export const useTypingStore = defineStore("typing", () => {
   const isMath = ref<boolean>(false);
   const isInverse = ref<boolean>(false);
 
+  const isHighlighted = ref(false);
+  const selectedHighlight = ref("#fef08a");
+
   const selectedColor = ref<string>("#000000");
 
   const activeBlockId = ref<string | null>(null);
@@ -36,8 +40,12 @@ export const useTypingStore = defineStore("typing", () => {
   }
 
   function setSelection(blockId: string | null, start: number, end: number) {
+    const changed = activeBlockId.value !== blockId
+      || selectionRange.value?.start !== start
+      || selectionRange.value?.end !== end;
     activeBlockId.value = blockId;
     selectionRange.value = blockId !== null ? { start, end } : null;
+    return changed;
   }
 
   function syncFromSpans(
@@ -60,6 +68,10 @@ export const useTypingStore = defineStore("typing", () => {
     isMath.value = styles.includes("math");
     isInverse.value = isItalic.value;
 
+    const highlight = highlightColor(matchedStyle?.style ?? "normal");
+    isHighlighted.value = !!highlight;
+    if (highlight) selectedHighlight.value = highlight;
+
     // Inspect color
     const matchedColor = colorSpans.find(c => c.start <= inspectPos && c.end > inspectPos);
     if (matchedColor?.color) {
@@ -68,13 +80,14 @@ export const useTypingStore = defineStore("typing", () => {
   }
 
   function getActiveStyleString(): string {
-    const active: KnownStyle[] = [];
+    const active: string[] = [];
     if (isBold.value) active.push("bold");
     if (isItalic.value) active.push("italic");
     if (isUnderlined.value) active.push("underline");
     if (isStrikethrough.value) active.push("strikethrough");
     if (isCode.value) active.push("code");
     if (isMath.value) active.push("math");
+    if (isHighlighted.value) active.push(`highlight:${selectedHighlight.value}`);
     return active.length > 0 ? active.join(" ") : "normal";
   }
 
@@ -86,12 +99,16 @@ export const useTypingStore = defineStore("typing", () => {
     isCode.value = false;
     isMath.value = false;
     isInverse.value = false;
+    isHighlighted.value = false;
+    selectedHighlight.value = "#fef08a";
     selectedColor.value = "#000000";
     activeBlockId.value = null;
     selectionRange.value = null;
   }
 
   return {
+    isHighlighted,
+    selectedHighlight,
     isBold,
     isUnderlined,
     isStrikethrough,

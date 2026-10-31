@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type Locator } from "@playwright/test";
 import { Block, type BlockType } from "../app/core/blocks/Block";
 import { settingsClasses } from "../app/core/blocks/settings";
 import {
@@ -206,6 +206,15 @@ test("two Backspaces delete supported empty text blocks", async ({ page }) => {
 });
 
 const blockLabels: Record<BlockType, string> = {
+  todo: "To do",
+  table: "Table",
+  codex: "Codex",
+  antigravity: "Antigravity",
+  ollama: "Ollama",
+  notebook: "Notebook",
+  web: "Web",
+  interactive: "Interactive",
+  markdown: "Markdown",
   paragraph: "Paragraph",
   heading1: "Heading 1",
   heading2: "Heading 2",
@@ -225,11 +234,8 @@ const blockLabels: Record<BlockType, string> = {
 
 async function add(page: Page, type: BlockType) {
   const target = page.locator("[data-block-id]").last();
-  const input = target.locator("textarea, input").first();
-  if (await input.count()) {
-    await input.focus();
-    await page.keyboard.press("Alt+Enter");
-  }
+  await target.hover();
+  await target.getByRole('button', { name: 'Add block below', exact: true }).click();
   const newBlock = page.locator("[data-block-id]").last();
   if (type !== "paragraph") {
     await newBlock.hover();
@@ -237,7 +243,11 @@ async function add(page: Page, type: BlockType) {
     await newBlock.getByRole("menuitem", { name: "Turn into" }).click();
     await newBlock.getByRole("menu", { name: "Turn into options" }).getByRole("menuitem", { name: blockLabels[type] }).click();
   }
-  return newBlock;
+  const result = page.locator(`[data-block-id="${await newBlock.getAttribute("data-block-id")}"]`);
+  if (["bulletedList", "numberedList", "quote"].includes(type)) {
+    await result.locator("textarea").locator("..").click();
+  }
+  return result;
 }
 
 test("wrapper menu deletes the selected block and preserves editing after hydration", async ({ page }) => {
@@ -265,26 +275,26 @@ test("wrapper menu deletes the selected block and preserves editing after hydrat
   await trigger.click();
   await block.getByRole("menuitem", { name: "Delete block" }).click();
   await expect(block).toHaveCount(0);
-  await expect(page.locator("[data-block-id]")).toHaveCount(17);
+  await expect(page.locator("[data-block-id]")).toHaveCount(18);
   const remaining = page.locator('[data-block-id="origins"] textarea');
   await remaining.fill("Edited after deletion");
   await expect(remaining).toHaveValue("Edited after deletion");
   await add(page, "paragraph");
-  await expect(page.locator("[data-block-id]")).toHaveCount(18);
+  await expect(page.locator("[data-block-id]")).toHaveCount(19);
 });
 
 test("all block editors render inside wrappers and update interactively", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
-  await expect(page.locator("[data-block-id]")).toHaveCount(18);
+  await expect(page.locator("[data-block-id]")).toHaveCount(19);
   
   const firstBlock = page.locator("[data-block-id]").first();
   await firstBlock.hover();
   await firstBlock.locator('button[aria-label="Block actions"]').click();
   await firstBlock.getByRole("menuitem", { name: "Turn into" }).click();
   const turnIntoMenu = firstBlock.getByRole("menu", { name: "Turn into options" });
-  await expect(turnIntoMenu.getByRole("menuitem")).toHaveCount(15);
+  await expect(turnIntoMenu.getByRole("menuitem")).toHaveCount(18);
   await expect(turnIntoMenu.getByRole("menuitem", { name: "Code" })).toHaveCount(1);
   await expect(turnIntoMenu.getByRole("menuitem", { name: "Math" })).toHaveCount(1);
   await expect(turnIntoMenu.getByRole("menuitem", { name: "Drawing" })).toHaveCount(1);
@@ -293,7 +303,7 @@ test("all block editors render inside wrappers and update interactively", async 
 
   await expect(page.getByRole("toolbar", { name: "Text formatting" })).toBeVisible();
   expect(await page.locator("main").evaluate((main) => {
-    const editor = main.querySelector('[class~="space-y-3"]');
+    const editor = main.querySelector('[data-block-id]');
     const toolbar = main.querySelector('[role="toolbar"]');
     return Boolean(editor && toolbar && (editor.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_FOLLOWING));
   })).toBe(true);
@@ -425,6 +435,8 @@ test("AppConfiguration defaults code, math, and drawing to false", () => {
 
 test("dist exports public contracts and default module", async () => {
   const dist = await import("../dist/index.js");
+  expect(dist.InteractiveBlock).toBeDefined();
+  expect(dist.defaultInteractiveData).toBeDefined();
   expect(dist.Block).toBeDefined();
   expect(dist.ParagraphBlock).toBeDefined();
   expect(dist.Heading1Block).toBeDefined();
@@ -481,3 +493,295 @@ test("typing / in paragraph block opens turn into dropdown and handles selection
 });
 
 
+
+
+test("Markdown import creates ordered blocks and preserves unsupported structures", async () => {
+  const { importMarkdown } = await import("../app/core/blocks/markdownImport");
+  const blocks = importMarkdown("# Title\n\nHello **world**.\n\n- First\n- Second\n\n1. One\n2. Two\n\n> Quote\n\n---\n\n```python\nprint(1)\n```\n");
+  expect(blocks.map(block => block.blockType)).toEqual(["heading1", "paragraph", "bulletedList", "numberedList", "quote", "divider", "code"]);
+  expect(blocks[1]?.data).toBe("Hello world.");
+  expect(blocks[1]?.blockSettings.styles).toContainEqual({ start: 6, end: 11, style: "bold" });
+  expect(blocks[6]?.data).toBe("print(1)");
+  expect(blocks[6]?.blockSettings).toMatchObject({ language: "python" });
+  expect(new Set(blocks.map(block => block.id)).size).toBe(blocks.length);
+  expect(importMarkdown("| A | B |\n|---|---|\n| X | Y |\n")[0]?.blockType).toBe("markdown");
+  expect(importMarkdown("- Parent\n  - Child")[0]?.blockType).toBe("markdown");
+  expect(importMarkdown("```js\nconst a = 1\n```", false)[0]?.blockType).toBe("markdown");
+  expect(importMarkdown("\n  ")).toEqual([]);
+});
+
+test('clipboard exports preserve block order and separate Markdown from plain text', async () => {
+  const { blocksToMarkdown, blocksToText } = await import('../app/core/blocks/blockClipboard');
+  const blocks = [
+    createBlock('heading1', 'copy-heading', 1, 'Title'),
+    createBlock('paragraph', 'copy-body', 1, 'Hello world', { styles: [{ start: 6, end: 11, style: 'bold' }] }),
+    createBlock('bulletedList', 'copy-list', 1, '- First\n- Second'),
+    createBlock('quote', 'copy-quote', 1, '> Quote'),
+  ];
+  expect(blocksToMarkdown(blocks)).toBe('# Title\n\nHello **world**\n\n- First\n- Second\n\n> Quote');
+  expect(blocksToText(blocks)).toBe('Title\n\nHello world\n\nFirst\nSecond\n\nQuote');
+  expect(blocks[1]?.data).toBe('Hello world');
+});
+
+test('drag selection opens block actions and copied blocks paste with new IDs', async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: {
+    writeText: async (text: string) => { (window as unknown as { copiedBlocks: string }).copiedBlocks = text; },
+  } }));
+  await page.goto('/');
+  const wrappers = page.locator('[data-block-id]');
+  await wrappers.first().waitFor();
+  const before = await wrappers.count();
+  const ids = await wrappers.evaluateAll(elements => elements.slice(0, 2).map(element => element.getAttribute('data-block-id')));
+  const first = (await wrappers.nth(0).boundingBox())!;
+  const second = (await wrappers.nth(1).boundingBox())!;
+  await page.mouse.move(first.x + 2, first.y + 2);
+  await page.mouse.down();
+  await page.mouse.move(second.x + second.width - 2, second.y + second.height - 2, { steps: 10 });
+  await page.mouse.up();
+  const toolbar = page.getByRole('toolbar', { name: 'Selected block actions' });
+  await expect(toolbar).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'Text formatting' })).toHaveCount(0);
+  await toolbar.getByRole('button', { name: 'Copy blocks', exact: true }).click();
+  const copied = JSON.parse(await page.evaluate(() => (window as unknown as { copiedBlocks: string }).copiedBlocks));
+  expect(copied.blocks.map((block: { id: string }) => block.id)).toEqual(ids);
+  await page.keyboard.press('Control+v');
+  await expect(wrappers).toHaveCount(before + 2);
+  const pastedIds = await wrappers.evaluateAll(elements => elements.slice(2, 4).map(element => element.getAttribute('data-block-id')));
+  expect(pastedIds.every(id => !ids.includes(id))).toBe(true);
+  await page.keyboard.press('Delete');
+  await expect(wrappers).toHaveCount(before);
+  await expect(toolbar).toHaveCount(0);
+});
+
+test('interactive data validates, restores, and round-trips through Markdown', async () => {
+  const { parseInteractiveData, interactiveTotal } = await import('../app/core/blocks/interactiveData');
+  const { importMarkdown } = await import('../app/core/blocks/markdownImport');
+  const block = createBlock('interactive', 'scenario', 4);
+  expect(interactiveTotal(parseInteractiveData(block.data))).toBe(428);
+  const next = parseInteractiveData(block.data);
+  next.inputs[0]!.value = 5;
+  const updated = block.withData(JSON.stringify(next));
+  expect(interactiveTotal(parseInteractiveData(updated.data))).toBe(608);
+  expect(interactiveTotal(parseInteractiveData(block.data))).toBe(428);
+  const restored = Block.fromJSON(JSON.parse(JSON.stringify(updated)));
+  expect(restored.blockType).toBe('interactive');
+  expect(restored.id).toBe('scenario');
+  expect(restored.version).toBe(4);
+  expect(restored.blockSettings).toBeInstanceOf(settingsClasses.interactive);
+  expect(importMarkdown(updated.toMarkdown(), false)[0]!.data).toBe(updated.data);
+  expect(block.fromMarkdown(updated.toMarkdown()).data).toBe(updated.data);
+  expect(interactiveTotal(parseInteractiveData(block.data))).toBe(428);
+  next.inputs[0]!.max = 0;
+  expect(() => parseInteractiveData(JSON.stringify(next))).toThrow();
+  expect(() => parseInteractiveData('{broken')).toThrow();
+  expect(importMarkdown('```interactive\n{broken\n```')[0]!.blockType).toBe('markdown');
+});
+
+test('interactive sliders update results and configuration errors preserve the scenario', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  const block = page.locator('[data-block-id="example-interactive"]');
+  await expect(block.locator('output')).toHaveText('428 EUR');
+  const slider = block.getByRole('slider', { name: 'Accommodation' });
+  await slider.focus();
+  await slider.press('ArrowRight');
+  await expect(block.locator('output')).toHaveText('518 EUR');
+  await block.getByText('Configure block', { exact: true }).click();
+  const source = block.getByRole('textbox', { name: 'Interactive configuration' });
+  const valid = await source.inputValue();
+  await source.fill('{broken');
+  await block.getByRole('button', { name: 'Apply configuration' }).click();
+  await expect(block.getByRole('alert')).toBeVisible();
+  await expect(block.locator('output')).toHaveText('518 EUR');
+  const custom = JSON.parse(valid);
+  custom.title = 'Event budget';
+  custom.inputs[0].rate = 100;
+  await source.fill(JSON.stringify(custom));
+  await block.getByRole('button', { name: 'Apply configuration' }).click();
+  await expect(block.getByRole('heading', { name: 'Event budget' })).toBeVisible();
+  await expect(block.locator('output')).toHaveText('558 EUR');
+  await expect(block.getByRole('alert')).toHaveCount(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await block.locator(".interactive-block").evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('interactive block is available through both insertion menus', async ({ page }) => {
+  await page.goto('/');
+  const converted = await add(page, 'interactive');
+  await expect(converted.locator('output')).toHaveText('428 EUR');
+  const paragraph = await add(page, 'paragraph');
+  const id = await paragraph.getAttribute('data-block-id');
+  await paragraph.locator('textarea').fill('/');
+  await paragraph.locator('button[data-block-type="interactive"]').click();
+  await expect(paragraph.locator('output')).toHaveText('428 EUR');
+  await expect(paragraph).toHaveAttribute('data-block-id', id!);
+});
+
+test('interactive activities validate state, round-trip, and split money exactly', async () => {
+  const { defaultInteractiveExperience, parseInteractiveExperience, splitBill } = await import('../app/core/blocks/interactiveExperience');
+  const { importMarkdown } = await import('../app/core/blocks/markdownImport');
+  for (const kind of ['bill-splitter', 'comparison', 'checklist', 'quiz'] as const) {
+    const data = defaultInteractiveExperience(kind);
+    expect(parseInteractiveExperience(JSON.stringify(data))).toEqual(data);
+    const block = createBlock('interactive', 'activity', 3, JSON.stringify(data));
+    expect(importMarkdown(block.toMarkdown(), false)[0]!.data).toBe(block.data);
+    expect(Block.fromJSON(JSON.parse(JSON.stringify(block))).data).toBe(block.data);
+  }
+  const bill = { kind: 'bill-splitter' as const, title: '', description: '', amount: 10, people: 3, tip: 0, unit: 'EUR' };
+  const result = splitBill(bill);
+  expect(result.extra).toBe(1);
+  expect(result.share).toBe(3.33);
+  expect(result.largerShare).toBe(3.34);
+  expect(Math.round((result.extra * result.largerShare + (bill.people - result.extra) * result.share) * 100)).toBe(1000);
+  expect(() => parseInteractiveExperience(JSON.stringify({ ...bill, people: 0 }))).toThrow();
+  expect(() => parseInteractiveExperience(JSON.stringify({ ...bill, people: 1.5 }))).toThrow();
+  expect(() => parseInteractiveExperience(JSON.stringify({ ...defaultInteractiveExperience('quiz'), questions: [] }))).toThrow();
+  expect(() => parseInteractiveExperience(JSON.stringify({ ...defaultInteractiveExperience('comparison'), selectedId: 'missing' }))).toThrow();
+  expect(() => parseInteractiveExperience(JSON.stringify({ ...defaultInteractiveExperience('checklist'), items: [{ id: 'x', label: 'x', detail: '', done: 'yes' }] }))).toThrow();
+});
+
+test('interactive activities support forms, filtering, tasks, quiz feedback, and keyboard use', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  const block = page.locator('[data-block-id="example-interactive"]');
+  const kind = block.getByLabel('Interaction type');
+  await kind.selectOption('bill-splitter');
+  await expect(block.locator('output')).toHaveText('132.00 EUR');
+  await block.getByLabel('People', { exact: true }).fill('3');
+  await block.getByLabel('People', { exact: true }).press('Tab');
+  await expect(block).toContainText('3 people pay 44.00 EUR each.');
+  await block.getByRole('button', { name: '20% tip', exact: true }).click();
+  await expect(block.locator('output')).toHaveText('144.00 EUR');
+  await block.getByLabel('People', { exact: true }).fill('0');
+  await block.getByLabel('People', { exact: true }).press('Tab');
+  await expect(block.getByRole('alert')).toBeVisible();
+  await expect(block.locator('output')).toHaveText('144.00 EUR');
+  await kind.selectOption('comparison');
+  await expect(block.getByRole('radio')).toHaveCount(3);
+  await block.getByRole('radio', { name: /Old Town studio/ }).check();
+  await expect(block.getByText('Your choice: Old Town studio', { exact: true })).toBeVisible();
+  const budget = block.getByLabel(/Maximum price/);
+  await budget.fill('70'); await budget.press('Tab');
+  await expect(block.getByRole('radio')).toHaveCount(1);
+  await expect(block).toContainText('Select an option to record your choice.');
+  await budget.fill('0'); await budget.press('Tab');
+  await expect(block.getByRole('status')).toContainText('No options fit');
+  await kind.selectOption('checklist');
+  await block.getByRole('checkbox', { name: /Test the prototype/ }).check();
+  await expect(block.getByRole('progressbar')).toHaveAttribute('value', '2');
+  await block.getByLabel('New task').fill('Publish demo');
+  await block.getByLabel('New task').press('Enter');
+  await expect(block.getByRole('checkbox')).toHaveCount(4);
+  await block.getByRole('button', { name: 'Remove Publish demo', exact: true }).click();
+  await expect(block.getByRole('checkbox')).toHaveCount(3);
+  await kind.selectOption('quiz');
+  await expect(block.getByRole('button', { name: 'Check answers' })).toBeDisabled();
+  await block.getByRole('radio', { name: 'An immediate result', exact: true }).check();
+  await block.getByRole('radio', { name: 'Cards with the same fields', exact: true }).check();
+  await block.getByRole('button', { name: 'Check answers' }).click();
+  await expect(block.locator('output')).toHaveText('2 / 2 correct');
+  await expect(block).toContainText('Immediate feedback connects');
+  await block.getByRole('button', { name: 'Try again' }).click();
+  await expect(block.locator('output')).toHaveCount(0);
+  await expect(block.getByRole('radio', { checked: true })).toHaveCount(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const value of ['bill-splitter', 'comparison', 'checklist', 'quiz']) {
+    await kind.selectOption(value);
+    expect(await block.locator('.interactive-block').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  }
+  expect(errors).toEqual([]);
+});
+
+test('web blocks preserve HTML, settings, and fences across restoration and Markdown', async () => {
+  const { importMarkdown } = await import('../app/core/blocks/markdownImport');
+  const { buildWebPreview } = await import('../app/core/blocks/webPreview');
+  const html = '<style>body{color:red}</style><script>const code = "```";</script><h1>Demo</h1>';
+  const block = createBlock('web', 'web-test', 7, html, { alignment: 'center', height: 600 });
+  const restored = Block.fromJSON(JSON.parse(JSON.stringify(block)));
+  expect(restored).toBeInstanceOf(blockClasses.web);
+  expect(restored.blockSettings).toBeInstanceOf(settingsClasses.web);
+  expect(restored.blockSettings.height).toBe(600);
+  expect(restored.id).toBe('web-test');
+  expect(restored.version).toBe(7);
+  expect(importMarkdown(block.toMarkdown(), false)[0]!.data).toBe(html);
+  expect(importMarkdown(block.toMarkdown(), false)[0]!.blockType).toBe('web');
+  expect(createBlock('web').fromMarkdown(block.toMarkdown()).data).toBe(html);
+  expect(block.withData('New HTML').blockSettings.height).toBe(600);
+  expect(block.data).toBe(html);
+  expect(buildWebPreview(html)).toContain(html);
+});
+
+async function webAction(block: Locator, name: string) {
+  await block.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await block.getByRole('menuitem', { name, exact: true }).click();
+}
+
+test('web block runs HTML CSS and JavaScript in an isolated restartable preview', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/');
+  const block = await add(page, 'web');
+  const source = block.getByRole('textbox', { name: 'HTML source', exact: true });
+  await expect(source).toBeHidden();
+  await expect(block.locator('.web-block header')).toHaveCount(0);
+  await webAction(block, 'Edit HTML');
+  const html = `<style>#counter { color: rgb(11, 22, 33); }</style>
+<button id="counter">0</button><p id="isolation"></p>
+<script>document.querySelector('#counter').onclick = event => event.target.textContent++;
+try { parent.document.body.dataset.webEscaped = 'yes'; } catch { document.querySelector('#isolation').textContent = 'Host isolated'; }</script>`;
+  await page.evaluate(value => navigator.clipboard.writeText(value), html);
+  await source.focus(); await source.press('Control+a'); await source.press('Control+v');
+  await expect(source).toHaveValue(html);
+  await webAction(block, 'Run HTML');
+  const frame = block.frameLocator('iframe');
+  await expect(frame.locator('#counter')).toHaveCSS('color', 'rgb(11, 22, 33)');
+  await frame.getByRole('button', { name: '0', exact: true }).click();
+  await expect(frame.locator('#counter')).toHaveText('1');
+  await expect(frame.locator('#isolation')).toHaveText('Host isolated');
+  expect(await page.locator('body').getAttribute('data-web-escaped')).toBeNull();
+  await expect(block.locator('iframe')).toHaveAttribute('sandbox', 'allow-scripts');
+  await expect(source).toBeHidden();
+  await webAction(block, 'Edit HTML');
+  await source.fill('<h1>Updated</h1>');
+  await expect(frame.getByRole('heading', { name: 'Updated', exact: true })).toBeVisible();
+  await expect(source).toBeVisible();
+  await block.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await block.getByLabel('Preview height', { exact: true }).fill('550');
+  await block.getByLabel('Preview height', { exact: true }).press('Tab');
+  await expect(block.locator('iframe')).toHaveCSS('height', '550px');
+  await block.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await webAction(block, 'Stop');
+  await expect(block.locator('iframe')).toHaveCount(0);
+  await webAction(block, 'Run HTML');
+  await expect(frame.getByRole('heading', { name: 'Updated', exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await block.locator('.web-block').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+});
+
+test('web block imports files, rejects invalid files, and is available in slash menu', async ({ page }) => {
+  await page.goto('/');
+  const paragraph = await add(page, 'paragraph');
+  await paragraph.locator('textarea').fill('/');
+  await paragraph.locator('button[data-block-type="web"]').click();
+  const source = paragraph.getByRole('textbox', { name: 'HTML source', exact: true });
+  const file = paragraph.getByLabel('Import HTML file', { exact: true });
+  const html = '<h1>Imported file</h1><script>document.querySelector("h1").textContent += " runs"</script>';
+  await paragraph.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await file.setInputFiles({ name: 'demo.HTML', mimeType: 'text/html', buffer: Buffer.from(html) });
+  await expect(source).toHaveValue(html);
+  await expect(paragraph.frameLocator('iframe').getByRole('heading', { name: 'Imported file runs', exact: true })).toBeVisible();
+  await paragraph.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await file.setInputFiles({ name: 'invalid.txt', mimeType: 'text/plain', buffer: Buffer.from('wrong type') });
+  await expect(paragraph.getByRole('alert')).toContainText('.html or .htm');
+  await expect(source).toHaveValue(html);
+  await paragraph.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await file.setInputFiles({ name: 'large.html', mimeType: 'text/html', buffer: Buffer.alloc(2 * 1024 * 1024 + 1) });
+  await expect(paragraph.getByRole('alert')).toContainText('2 MB');
+  await expect(source).toHaveValue(html);
+  await paragraph.getByRole('button', { name: 'Block actions', exact: true }).click();
+  await file.setInputFiles({ name: 'demo.HTML', mimeType: 'text/html', buffer: Buffer.from(html) });
+  await expect(paragraph.getByRole('alert')).toHaveCount(0);
+  await expect(paragraph.frameLocator('iframe').getByRole('heading', { name: 'Imported file runs', exact: true })).toBeVisible();
+});

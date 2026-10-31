@@ -1,3 +1,10 @@
+import TodoComponent from '../../components/TodoBlock.vue';
+import TableComponent from '../../components/TableBlock.vue';
+import AiComponent from "./../../components/AiBlock.vue";
+import NotebookComponent from "~/components/NotebookBlock.vue";
+import WebComponent from '~/components/WebBlock.vue';
+import InteractiveComponent from "~/components/InteractiveBlock.vue";
+import MarkdownComponent from "~/components/MarkdownBlock.vue";
 import ParagraphComponent from "~/components/ParagraphBlock.vue";
 import Heading1Component from "~/components/Heading1Block.vue";
 import Heading2Component from "~/components/Heading2Block.vue";
@@ -19,7 +26,16 @@ import type { BlockType } from "./Block";
 export * from "./blockClasses";
 
 export const blockComponents: Record<BlockType, Component> = {
+  todo: TodoComponent,
+  table: TableComponent,
+  ollama: AiComponent,
+  codex: AiComponent,
+  antigravity: AiComponent,
+  notebook: NotebookComponent,
+  web: WebComponent,
+  interactive: InteractiveComponent,
   paragraph: ParagraphComponent,
+  markdown: MarkdownComponent,
   heading1: Heading1Component,
   heading2: Heading2Component,
   heading3: Heading3Component,
@@ -37,7 +53,16 @@ export const blockComponents: Record<BlockType, Component> = {
 };
 
 export const blockLabels: Record<BlockType, string> = {
+  todo: "To do",
+  table: "Table",
+  ollama: "Ollama",
+  codex: "Codex",
+  antigravity: "Antigravity",
+  notebook: "Notebook",
+  web: "Web",
+  interactive: "Interactive",
   paragraph: "Paragraph",
+  markdown: "Markdown",
   heading1: "Heading 1",
   heading2: "Heading 2",
   heading3: "Heading 3",
@@ -55,7 +80,16 @@ export const blockLabels: Record<BlockType, string> = {
 };
 
 export const blockIcons: Record<BlockType, string> = {
+  todo: "material-symbols:check-circle-outline",
+  table: "material-symbols:table",
+  ollama: "lucide:bot",
+  codex: "lucide:sparkles",
+  antigravity: "lucide:orbit",
+  notebook: "material-symbols:book-2",
+  web: "material-symbols:language",
+  interactive: "material-symbols:tune",
   paragraph: "material-symbols:notes",
+  markdown: "material-symbols:markdown",
   heading1: "material-symbols:format-h1",
   heading2: "material-symbols:format-h2",
   heading3: "material-symbols:format-h3",

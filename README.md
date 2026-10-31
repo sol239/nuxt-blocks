@@ -386,3 +386,88 @@ Run `npm run typecheck` and `npm run build`.
 For the regression tests, install Chromium once with `npx playwright install chromium`,
 then run `npm test` after building. Tests cover settings restoration, data formats,
 and browser editing for all block types.
+
+### Import Markdown as blocks
+
+Choose **Markdown** from the slash menu (`/markdown`) or **Turn into**. Pasting
+Markdown into this block replaces it with ordered heading, paragraph, list,
+quote, divider, code, image and link blocks. You can also type a source document
+and choose **Split into blocks**. Inline bold, italic, strikethrough and code are
+converted to formatting spans. Tables, nested/task lists, heading levels 4–6
+and other unsupported structures remain editable Markdown blocks, preserving
+the source. Code fences remain Markdown when code blocks are disabled.
+The first replacement retains the original block ID; surrounding blocks remain
+in place. Markdown blocks serialize with `blockType: "markdown"` (REST:
+`block_type: "markdown"`) and their source is stored in `data`.
+
+### Selected-block actions
+
+Drag across block margins to select blocks. A bottom toolbar offers deletion,
+structured block copying, Markdown copying (including inline styles), and plain
+text copying. Selection order follows the canvas order. `Ctrl+C` / `Ctrl+V`
+copy and paste independent blocks with new IDs. Clicking into text returns to
+the text-formatting toolbar; Escape or clicking outside clears block selection.
+
+Hosting applications can provide `BLOCK_CARD_CREATOR_KEY` from
+`composables/useBlockCardCreator` to enable **Create card**. The component receives
+independent `blocks` and emits `close`. rvn-frontend provides a deck selector and
+front/back editors, including side swapping, through its Education plugin.
+
+### Interactive experiences
+
+Add **Interactive** from the slash menu (`/interactive`) or **Turn into**.
+The block supports scenario calculators, bill splitting, filtered comparisons,
+editable checklists, and quizzes with feedback. Choose an **Example type** to
+start a different interaction, or use **Configure block** for your own content.
+Configuration, choices, and progress live in `data` and emit immutable updates.
+Legacy slider blocks remain compatible. No optional dependency is required.
+See [Interactive answers with Blocks](docs/interactive-blocks.md) for schemas,
+API examples, persistence, and accessibility behavior.
+
+### Web: run HTML, CSS, and JavaScript
+
+Add **Web** through `/web` or **Turn into → Web**. Paste a full HTML document or
+fragment into **HTML source**; the preview starts automatically after a brief typing pause. Inline `<style>` and
+`<script>` elements render and execute in the preview. **Import HTML file** accepts
+`.html` and `.htm` files up to 2 MB and immediately previews them. All web controls
+(**Edit HTML**, **Import HTML file**, preview height, **Run HTML**, **Stop**) live in
+the wrapper’s **Block actions** menu. The block itself renders the HTML preview
+without a card or header. Hide the source with **Hide HTML** in the same menu.
+Run HTML also restarts the current document.
+
+Tailwind CSS v4 is built in. Use utilities directly, for example
+`<div class="rounded-xl bg-blue-50 p-6 text-blue-900">Hello</div>`.
+Responsive variants, arbitrary values, and classes added by JavaScript work in the
+preview. Use `<style type="text/tailwindcss">` for `@theme` and `@apply`.
+The browser compiler is bundled locally; no CDN script or network access is
+needed for Tailwind. It runs inside the iframe and does not affect the host UI.
+The runtime is not added to saved HTML or Markdown exports.
+
+The source lives in `WebBlock.data`; the preview height lives in
+`WebBlockSettings.height`. Source edits emit immutable updates through the usual
+block save path. Editing updates the preview automatically after a 350 ms pause, keeping the
+source editor open. **Run HTML** restarts immediately; **Stop** cancels pending updates. Saved Web blocks run when opened. The embedded app's transient JavaScript
+state is recreated each time the preview runs; only its source and block settings
+are stored by Blocks.
+
+```ts
+import { WebBlock } from 'nuxt-blocks';
+
+const block = new WebBlock('my-widget', 1,
+  '<style>button{color:blue}</style><button onclick="this.textContent=\'Clicked!\'">Try me</button>',
+  { height: 420 },
+);
+```
+
+The preview uses a sandboxed iframe with script execution enabled and an opaque
+origin. It cannot access the host document or host storage. HTTPS scripts, styles,
+images, media, and requests are allowed subject to browser CORS; insecure HTTP
+requests, external form submissions, plugins, and `eval` are blocked. Include local
+CSS/JS in the imported HTML itself, or reference HTTPS assets: selecting a file
+does not upload its sibling files. The sandbox isolates browser permissions and
+DOM access; it is not a separate execution process or resource quota.
+
+Markdown export uses a `web` code fence, and importing that fence restores a Web
+block even if Monaco code blocks are disabled. Ordinary `html` code fences remain
+code blocks. `WebBlock` and `WebBlockSettings` are available from the library API;
+the Web block does not require Monaco or another optional dependency.

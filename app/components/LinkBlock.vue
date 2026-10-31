@@ -5,8 +5,15 @@
       class="group/link flex min-h-[62px] items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md"
     >
       <!-- Favicon -->
+      <Icon
+        v-if="projectPreview"
+        :name="projectPreview.icon"
+        :style="{ color: projectPreview.color }"
+        class="size-6 shrink-0"
+        aria-hidden="true"
+      />
       <img
-        v-if="!faviconError && faviconUrl"
+        v-else-if="!faviconError && faviconUrl"
         :src="faviconUrl"
         :alt="displayHost + ' icon'"
         width="20"
@@ -26,9 +33,10 @@
       </span>
 
       <!-- Input area (when editing or when URL is empty) -->
-      <div v-if="isEditing || !url" class="min-w-0 flex-1 flex flex-col justify-center">
+      <div v-if="!readOnly && (isEditing || !url)" class="min-w-0 flex-1 flex flex-col justify-center">
         <input
-          ref="inputRef"
+ref="inputRef"
+          data-control-size="field"
           type="url"
           aria-label="Link URL"
           placeholder="https://example.com"
@@ -44,6 +52,14 @@
       </div>
 
       <!-- Title & host (when not editing and URL is present) -->
+      <NuxtLink
+        v-else-if="projectPreview"
+        :to="projectPreview.path"
+        class="min-w-0 flex-1 flex flex-col justify-center rounded focus-visible:outline-2 focus-visible:outline-blue-500"
+      >
+        <p class="truncate text-sm font-medium leading-5 text-gray-900">{{ projectPreview.name }}</p>
+        <p v-if="projectPreview.description" class="truncate text-xs leading-4 text-gray-500">{{ projectPreview.description }}</p>
+      </NuxtLink>
       <a
         v-else
         :href="url"
@@ -67,6 +83,8 @@
 
         <!-- Edit toggle button -->
         <button
+          v-if="!readOnly"
+data-control-size="field"
           type="button"
           :aria-label="isEditing ? 'Done editing' : 'Edit link URL'"
           :title="isEditing ? 'Done editing' : 'Edit link URL'"
@@ -112,12 +130,19 @@
 <script setup lang="ts">
 import type { Block } from "~/core/blocks/Block";
 import { safeUrl } from "~/core/blocks/media";
+import { useBlockLinkResolver, type BlockLinkPreview } from "../composables/useBlockLinkPreview";
 
-const props = defineProps<{ block: Block }>();
+const props = withDefaults(defineProps<{ block: Block; readOnly?: boolean }>(), { readOnly: false });
 const emit = defineEmits<{ "update:block": [value: Block] }>();
 
 const isEditing = ref(false);
 const inputRef = ref<HTMLInputElement>();
+const resolveAppLink = useBlockLinkResolver();
+const projectPreview = ref<BlockLinkPreview | null>(null);
+const isAppUrl = computed(() => {
+  if (!url.value || typeof window === "undefined") return false;
+  return new URL(url.value).origin === window.location.origin;
+});
 
 const url = computed(() => safeUrl(props.block.data ?? ""));
 
@@ -126,7 +151,7 @@ const displayHost = computed(() => {
 });
 
 const faviconUrl = computed(() => {
-  if (!url.value) return "";
+  if (!url.value || isAppUrl.value) return "";
   try {
     const hostname = new URL(url.value).hostname;
     return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`;
@@ -141,10 +166,12 @@ let fetchController: AbortController | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 function onInput(value: string) {
+  if (props.readOnly) return;
   emit("update:block", props.block.withData(value));
 }
 
 function toggleEdit() {
+  if (props.readOnly) return;
   if (isEditing.value) {
     isEditing.value = false;
   } else {
@@ -170,7 +197,7 @@ function onBlur(event: FocusEvent) {
   }
 }
 
-async function fetchTitle(targetUrl: string) {
+async function fetchTitle(targetUrl: string, version: number) {
   fetchController?.abort();
   fetchController = new AbortController();
   loading.value = true;
@@ -182,24 +209,42 @@ async function fetchTitle(targetUrl: string) {
     );
     if (!res.ok) return;
     const data = await res.json() as { status: string; data: { title?: string | null } };
-    if (data.status === "success") title.value = data.data.title ?? null;
+    if (version === previewVersion && data.status === "success") title.value = data.data.title ?? null;
   } catch {
     // Silently fail - card still shows with hostname as title fallback
   } finally {
-    loading.value = false;
+    if (version === previewVersion) loading.value = false;
   }
 }
 
-watch(url, (newUrl) => {
+let previewVersion = 0;
+watch(url, async (newUrl) => {
+  const version = ++previewVersion;
+  fetchController?.abort();
   if (debounceTimer) clearTimeout(debounceTimer);
+  projectPreview.value = null;
   title.value = null;
   faviconError.value = false;
   loading.value = false;
-  if (!newUrl) return;
-  debounceTimer = setTimeout(() => fetchTitle(newUrl), 600);
+  if (!newUrl || typeof window === "undefined") return;
+  if (isAppUrl.value) {
+    if (!resolveAppLink) return;
+    loading.value = true;
+    try {
+      const preview = await resolveAppLink(newUrl);
+      if (version === previewVersion) projectPreview.value = preview;
+    } catch {
+      // Deleted or unavailable projects retain the ordinary URL fallback.
+    } finally {
+      if (version === previewVersion) loading.value = false;
+    }
+    return;
+  }
+  debounceTimer = setTimeout(() => fetchTitle(newUrl, version), 600);
 }, { immediate: true });
 
 onBeforeUnmount(() => {
+  previewVersion++;
   fetchController?.abort();
   if (debounceTimer) clearTimeout(debounceTimer);
 });

@@ -1,5 +1,15 @@
+import { TodoBlock } from './TodoBlock';
+import { AntigravityBlock } from "./AntigravityBlock";
+import { TableBlock } from './TableBlock';
+import { OllamaBlock } from "./OllamaBlock";
+import { CodexBlock } from "./CodexBlock";
+import { NotebookBlock } from "./NotebookBlock";
+import { WebBlock } from './WebBlock';
+import { defaultWebSource } from './webPreview';
+import { InteractiveBlock } from "./InteractiveBlock";
 import { Block, type BlockType } from "./Block";
 
+import { MarkdownBlock } from "./MarkdownBlock";
 import { ParagraphBlock } from "./ParagraphBlock";
 import { Heading1Block } from "./Heading1Block";
 import { Heading2Block } from "./Heading2Block";
@@ -17,7 +27,16 @@ import { MathBlock } from "./MathBlock";
 import { DrawingBlock } from "./DrawingBlock";
 
 export const blockClasses = {
+  todo: TodoBlock,
+  table: TableBlock,
+  ollama: OllamaBlock,
+  codex: CodexBlock,
+  antigravity: AntigravityBlock,
+  notebook: NotebookBlock,
+  web: WebBlock,
+  interactive: InteractiveBlock,
   paragraph: ParagraphBlock,
+  markdown: MarkdownBlock,
   heading1: Heading1Block,
   heading2: Heading2Block,
   heading3: Heading3Block,
@@ -41,13 +60,13 @@ export function createBlock<T extends BlockType>(
   id: string = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
   version: number = 1,
   data: string | null = null,
-  settings: any = null,
+  settings: object | null = null,
 ): InstanceType<BlockClassMap[T]> {
   const Ctor = blockClasses[type] as unknown as new (
     id: string,
     version: number,
     data: string | null,
-    settings?: any,
+    settings?: object | null,
   ) => InstanceType<BlockClassMap[T]>;
   if (!Ctor) {
     throw new Error(`Unknown block type: ${type}`);
@@ -62,6 +81,10 @@ Block.setDeserializer((json) => {
 
 export function initialBlockData(type: BlockType): string {
   return ({
+    todo: "### To do\n- [ ] ",
+    table: new TableBlock().data!,
+    web: defaultWebSource(),
+    interactive: new InteractiveBlock().data!,
     divider: "---",
     bulletedList: "- ",
     numberedList: "1. ",
@@ -71,6 +94,15 @@ export function initialBlockData(type: BlockType): string {
 }
 
 export {
+  TodoBlock,
+  TableBlock,
+  OllamaBlock,
+  CodexBlock,
+  AntigravityBlock,
+  NotebookBlock,
+  WebBlock,
+  InteractiveBlock,
+  MarkdownBlock,
   ParagraphBlock,
   Heading1Block,
   Heading2Block,

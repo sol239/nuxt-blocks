@@ -1,22 +1,28 @@
 <template>
-  <div @click="startEditing" @keydown.enter.prevent="startEditing">
-    <!-- Edit mode: raw textarea -->
-    <textarea
-      v-show="editing"
-      ref="textarea"
-      :value="block.data ?? ''"
-      :aria-label="label"
-      :placeholder="marker(kind, 0) + 'Text'"
-      style="text-align: inherit; font-family: inherit; font-size: inherit"
-      class="field-sizing-content w-full resize-none bg-transparent focus:outline-none"
-      @input="update"
-      @keydown.enter="continueLine"
-      @blur="stopEditing"
-      @select="onSelection"
-      @keyup="onSelection"
-      @mouseup="onSelection"
-      @focus="onSelection"
-    />
+  <div @click="startEditing" @keydown.enter.self.prevent="startEditing">
+    <!-- Keep formatted text visible while the native textarea handles editing. -->
+    <div v-show="editing" class="relative w-full">
+      <div
+        aria-hidden="true"
+        class="rich-text-backdrop pointer-events-none absolute inset-0 overflow-hidden select-none whitespace-pre-wrap break-words"
+        style="text-align: inherit; font-family: inherit; font-size: inherit; line-height: inherit; letter-spacing: inherit"
+      ><FormattedSpans :spans="editingSpans" /></div>
+      <textarea
+        ref="textarea"
+        :value="block.data ?? ''"
+        :aria-label="label"
+        :placeholder="marker(kind, 0) + 'Text'"
+        style="text-align: inherit; font-family: inherit; font-size: inherit; line-height: inherit; letter-spacing: inherit"
+        class="field-sizing-content relative block w-full resize-none overflow-hidden bg-transparent text-transparent caret-gray-900 dark:caret-gray-100 selection:bg-blue-500/30 whitespace-pre-wrap break-words focus:outline-none"
+        @input="update"
+        @keydown.enter="continueLine"
+        @blur="stopEditing"
+        @select="onSelection"
+        @keyup="onSelection"
+        @mouseup="onSelection"
+        @focus="onSelection"
+      />
+    </div>
 
     <!-- Rendered view (always present for layout stability) -->
     <div v-show="!editing">
@@ -54,11 +60,14 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from "vue";
+import { usePageFragment } from '../composables/usePageFragment';
 import type { Block } from "~/core/blocks/Block";
+import { inlineMarkdownSpans } from '../core/blocks/inlineMarkdownSpans';
 import { marker, stripMarker, normalizeMarkedText, type MarkedKind } from "~/core/blocks/markedText";
 import { buildRenderSpans, reconcileSpansOnTextChange, type RenderSpan } from "~/core/blocks/textSpans";
 import { useTypingStore } from "~/stores/useTypingStore";
 import FormattedSpans from "./FormattedSpans.vue";
+const pageFragment = usePageFragment();
 
 const props = defineProps<{ block: Block; kind: MarkedKind }>();
 const emit = defineEmits<{ "update:block": [value: Block] }>();
@@ -81,6 +90,13 @@ const placeholder = computed(() => placeholders[props.kind]);
 const lines = computed(() =>
   (props.block.data ?? "").split("\n").map(line => stripMarker(line, props.kind)),
 );
+
+// Preserve list markers and raw character offsets to match textarea selection.
+const editingSpans = computed(() => buildRenderSpans(
+  props.block.data ?? "",
+  props.block.blockSettings?.styles ?? [],
+  props.block.blockSettings?.colors ?? [],
+));
 
 const hasContent = computed(() => lines.value.some(l => l.trim() !== ""));
 
@@ -121,9 +137,9 @@ function getLineSpans(lineIndex: number): RenderSpan[] {
 
   if (lineSpans.length === 0) {
     const text = stripMarker(currentLineRaw, props.kind);
-    return [{ start: 0, end: text.length, text, style: "normal", styles: [] }];
+    return inlineMarkdownSpans([{ start: 0, end: text.length, text, style: "normal", styles: [] }]);
   }
-  return lineSpans;
+  return inlineMarkdownSpans(lineSpans);
 }
 
 let blurTimer: ReturnType<typeof setTimeout> | null = null;
@@ -162,7 +178,8 @@ function onSelection() {
   if (!textarea.value) return;
   const start = textarea.value.selectionStart;
   const end = textarea.value.selectionEnd;
-  typingStore.setSelection(props.block.id, start, end);
+  const offset = pageFragment?.start.value ?? 0;
+  if (!typingStore.setSelection(props.block.id, offset + start, offset + end)) return;
   typingStore.syncFromSpans(
     props.block.blockSettings?.styles ?? [],
     props.block.blockSettings?.colors ?? [],
@@ -203,9 +220,10 @@ function commit(field: HTMLTextAreaElement) {
     (lineIndex ? previousLines.length + 1 : 0) +
     marker(props.kind, lineIndex).length +
     stripMarker(oldLine, props.kind).length;
+  typingStore.setSelection(props.block.id, position + (pageFragment?.start.value ?? 0), position + (pageFragment?.start.value ?? 0));
   nextTick(() => {
     field.setSelectionRange(position, position);
-    onSelection();
+    typingStore.setSelection(props.block.id, position + (pageFragment?.start.value ?? 0), position + (pageFragment?.start.value ?? 0));
   });
 }
 
@@ -214,7 +232,7 @@ function update(event: Event) {
 }
 
 function continueLine(event: KeyboardEvent) {
-  if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (event.isComposing || !event.altKey || event.ctrlKey || event.metaKey) return;
   event.preventDefault();
   const field = event.target as HTMLTextAreaElement;
   const index = field.value.slice(0, field.selectionStart).split("\n").length;

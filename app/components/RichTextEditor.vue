@@ -41,7 +41,10 @@ import {
   type ColorSpan,
 } from "~/core/blocks/textSpans";
 import { useTypingStore } from "~/stores/useTypingStore";
+import { inlineMarkdownSpans } from '../core/blocks/inlineMarkdownSpans';
 import FormattedSpans from "./FormattedSpans.vue";
+import { usePageFragment } from '../composables/usePageFragment';
+const pageFragment = usePageFragment();
 
 defineOptions({ inheritAttrs: false });
 
@@ -77,7 +80,7 @@ const colorSpans = computed<ColorSpan[]>(() => props.block.blockSettings?.colors
 const renderSpans = computed<RenderSpan[]>(() => {
   const text = props.block.data ?? "";
   if (!text) return [];
-  return buildRenderSpans(text, styleSpans.value, colorSpans.value);
+  return inlineMarkdownSpans(buildRenderSpans(text, styleSpans.value, colorSpans.value));
 });
 
 const hasFormatting = computed(() => {
@@ -85,7 +88,7 @@ const hasFormatting = computed(() => {
   const colors = colorSpans.value;
   const hasNonNormalStyle = styles.some(s => s.style && s.style !== "normal");
   const hasColor = colors.length > 0;
-  return hasNonNormalStyle || hasColor;
+  return hasNonNormalStyle || hasColor || renderSpans.value.map(span => span.text).join('') !== (props.block.data ?? '') || renderSpans.value.some(span => span.styles.length > 0);
 });
 
 function onInput(event: Event) {
@@ -111,14 +114,17 @@ function onInput(event: Event) {
     });
 
   emit("update:block", updatedBlock);
-  onSelection();
+  // Typing advances the caret while preserving the user's chosen formatting.
+  const offset = pageFragment?.start.value ?? 0;
+  typingStore.setSelection(props.block.id, offset + target.selectionStart, offset + target.selectionEnd);
 }
 
 function onSelection() {
   if (!textareaRef.value) return;
   const start = textareaRef.value.selectionStart;
   const end = textareaRef.value.selectionEnd;
-  typingStore.setSelection(props.block.id, start, end);
+  const offset = pageFragment?.start.value ?? 0;
+  if (!typingStore.setSelection(props.block.id, offset + start, offset + end)) return;
   typingStore.syncFromSpans(styleSpans.value, colorSpans.value, start, end);
 }
 
@@ -153,4 +159,3 @@ defineExpose({
   textarea: textareaRef,
 });
 </script>
-

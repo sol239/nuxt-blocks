@@ -11,7 +11,7 @@
     "url": "https://github.com/sol239/blocks/issues"
   },
   "type": "module",
-  "main": "./dist/module.js",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
     "nuxt-blocks": "./bin/cli.mjs"
@@ -19,7 +19,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/module.js"
+      "import": "./dist/index.js"
     },
     "./core": {
       "types": "./dist/app/core/blocks/Block.d.ts",
@@ -52,12 +52,15 @@
     "@nuxt/icon": "^2.5.1",
     "@nuxt/kit": "^3.16.0",
     "@pinia/nuxt": "^1.0.2",
+    "@tailwindcss/browser": "^4.3.3",
     "@tailwindcss/vite": "^4.3.3",
     "eslint": "^10.10.0",
-    "nuxt": "^4.5.2",
-    "pinia": "^4.0.3",
+    "marked": "^14.0.0",
+    "mermaid": "^12.2.0",
+    "nuxt": "^3.0.0 || ^4.0.0",
+    "pinia": ">=2.0.0 || >=3.0.0 || >=4.0.0",
     "tailwindcss": "^4.3.3",
-    "vue": "^3.5.42",
+    "vue": "^3.4.0",
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
@@ -69,13 +72,13 @@
     "vue-tsc": "^3.3.11"
   },
   "peerDependencies": {
-    "nuxt": "^3.0.0 || ^4.0.0",
-    "pinia": ">=2.0.0 || >=3.0.0 || >=4.0.0",
-    "vue": "^3.4.0",
     "@monaco-editor/loader": "^1.7.0",
     "katex": "^0.18.7",
     "monaco-editor": "^0.56.0",
-    "pixi.js": "^8.21.0"
+    "nuxt": "^3.0.0 || ^4.0.0",
+    "pinia": ">=2.0.0 || >=3.0.0 || >=4.0.0",
+    "pixi.js": "^8.21.0",
+    "vue": "^3.4.0"
   },
   "peerDependenciesMeta": {
     "@monaco-editor/loader": {

@@ -1,3 +1,4 @@
+import { codeLanguages } from "../app/core/blocks/codeLanguages";
 import { defineNuxtModule, addPlugin, addComponentsDir, addImportsDir, createResolver } from "@nuxt/kit";
 
 export interface ModuleOptions {
@@ -19,7 +20,7 @@ export default defineNuxtModule<ModuleOptions>({
     code: false,
     math: false,
     drawing: false,
-    codeLanguages: ["plaintext", "javascript", "typescript", "html", "css", "python", "json", "bash"],
+    codeLanguages: codeLanguages,
   },
   setup(options, nuxt) {
     const resolver = createResolver(import.meta.url);
@@ -30,7 +31,7 @@ export default defineNuxtModule<ModuleOptions>({
       code: Boolean(options.code),
       math: Boolean(options.math),
       drawing: Boolean(options.drawing),
-      codeLanguages: options.codeLanguages ?? ["plaintext", "javascript", "typescript", "html", "css", "python", "json", "bash"],
+      codeLanguages: options.codeLanguages ?? codeLanguages,
     };
 
     // Auto-register block components
